@@ -2,5 +2,5 @@
 path=./rust-gdb
 
 [commands]
-Compile rename-me=shell cargo b --bin rename-me --profile debugging
-Run rename-me=file target/debugging/rename-me;run&
+Compile peak=shell cargo b --bin peak --profile debugging
+Run peak=file target/debugging/peak;run&
