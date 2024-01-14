@@ -22,7 +22,6 @@ impl State {
         features::log(&format!("{:?}", seed));
 
         let mut game_state = game::State::new(seed);
-        //game_state.add_splat();
 
         Self {
             game_state,
@@ -73,6 +72,50 @@ fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
 
 #[inline]
 fn render(commands: &mut Commands, state: &game::State) {
+    const CUBE_W: unscaled::W = unscaled::W(111);
+    const CUBE_H: unscaled::H = unscaled::H(128);
+
+    const CUBE_XYS: [sprite::XY; 2] = [
+        sprite::XY {
+            x: sprite::X(128),
+            y: sprite::Y(0),
+        },
+        sprite::XY {
+            x: sprite::X(128),
+            y: sprite::Y(128),
+        },
+    ];
+
+    const BASE_X: unscaled::X = unscaled::X(0);
+    const BASE_Y: unscaled::Y = unscaled::Y(0);
+
+    for grid_x in 2i16..4 {
+        for grid_y in 4i16..8 {
+            let cube_i = usize::from(
+                ((grid_x ^ grid_y) & 1) as u16
+            );
+
+            let iso_x = grid_y - grid_x;
+            assert!(iso_x >= 0, "grid_x: {grid_x} grid_y: {grid_y}");
+            let iso_y = (grid_y + grid_x).saturating_sub(6);
+            assert!(iso_y >= 0, "grid_x: {grid_x} grid_y: {grid_y}");
+
+            commands.sspr(
+                CUBE_XYS[cube_i],
+                command::Rect::from_unscaled(unscaled::Rect {
+                    x: BASE_X + unscaled::W(
+                        iso_x as u16 * CUBE_W.0 / 2
+                    ),
+                    y: BASE_Y + unscaled::H(
+                        iso_y as u16 * CUBE_H.0 / 4
+                    ),
+                    w: CUBE_W,
+                    h: CUBE_H,
+                })
+            );
+        }
+    }
+
     for &Splat { kind, x, y } in &state.splats {
         commands.draw_card(kind, x, y);
 
