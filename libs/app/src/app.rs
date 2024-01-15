@@ -89,15 +89,18 @@ fn render(commands: &mut Commands, state: &game::State) {
     const BASE_X: unscaled::X = unscaled::X(0);
     const BASE_Y: unscaled::Y = unscaled::Y(0);
 
-    for grid_x in 2i16..4 {
-        for grid_y in 4i16..8 {
+    const GRID_X_START: i16 = 2;
+    const GRID_Y_START: i16 = 14;
+
+    for grid_x in GRID_X_START..(GRID_X_START + 6) {
+        for grid_y in GRID_Y_START..(GRID_Y_START + 8) {
             let cube_i = usize::from(
                 ((grid_x ^ grid_y) & 1) as u16
             );
 
-            let iso_x = grid_y - grid_x;
+            let iso_x = (grid_y - grid_x).saturating_sub(6);
             assert!(iso_x >= 0, "grid_x: {grid_x} grid_y: {grid_y}");
-            let iso_y = (grid_y + grid_x).saturating_sub(6);
+            let iso_y = (grid_y + grid_x).saturating_sub(GRID_Y_START + 2);
             assert!(iso_y >= 0, "grid_x: {grid_x} grid_y: {grid_y}");
 
             commands.sspr(
