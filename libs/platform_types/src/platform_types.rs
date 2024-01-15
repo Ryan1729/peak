@@ -6,15 +6,16 @@ pub type ARGB = u32;
 pub mod unscaled {
     ///! Values are in pixels.
 
-    pub type Inner = u16;
+    pub type Inner = i16;
+    pub type LengthInner = i16;
 
     pub const fn inner_from_u8(byte: u8) -> Inner {
         byte as Inner
     }
 
     macro_rules! def {
-        ($($name: ident, $inner_name: ident)+) => {$(
-            pub type $inner_name = Inner;
+        ($($name: ident, $inner_name: ident = $inner_type: ty)+) => {$(
+            pub type $inner_name = $inner_type;
             #[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
             pub struct $name(pub $inner_name);
 
@@ -33,10 +34,10 @@ pub mod unscaled {
     }
 
     def!{
-        X, XInner
-        Y, YInner
-        W, WInner
-        H, HInner
+        X, XInner = Inner
+        Y, YInner = Inner
+        W, WInner = LengthInner
+        H, HInner = LengthInner
     }
 
     pub const fn w_to_usize(w: W) -> usize {
@@ -543,7 +544,7 @@ pub type PaletteIndex = u8;
 
 
 pub mod sprite {
-    pub use super::unscaled::{W, H};
+    pub use super::unscaled::{W, H, LengthInner};
 
     pub type Inner = u16;
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -565,7 +566,9 @@ pub mod sprite {
 
     impl core::ops::AddAssign<W> for X {
         fn add_assign(&mut self, other: W) {
-            self.0 += other.0;
+            self.0 = self.0.saturating_add(
+                other.0.try_into().unwrap_or(Inner::MAX)
+            );
         }
     }
 
@@ -579,12 +582,22 @@ pub mod sprite {
     }
 
     pub const fn x_const_add_w(x: X, w: W) -> X {
-        X(x.0 + w.0)
+        X(
+            x.0.saturating_add(
+                if w.0 > (Inner::MAX as LengthInner) {
+                    Inner::MAX
+                } else {
+                    w.0 as Inner
+                }
+            )
+        )
     }
 
     impl core::ops::AddAssign<H> for Y {
         fn add_assign(&mut self, other: H) {
-            self.0 += other.0;
+            self.0 = self.0.saturating_add(
+                other.0.try_into().unwrap_or(Inner::MAX)
+            );
         }
     }
 
@@ -598,7 +611,15 @@ pub mod sprite {
     }
 
     pub const fn y_const_add_h(y: Y, h: H) -> Y {
-        Y(y.0 + h.0)
+        Y(
+            y.0.saturating_add(
+                if h.0 > (Inner::MAX as LengthInner) {
+                    Inner::MAX
+                } else {
+                    h.0 as Inner
+                }
+            )
+        )
     }
 
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -609,7 +630,9 @@ pub mod sprite {
 
     impl core::ops::AddAssign<W> for XY {
         fn add_assign(&mut self, other: W) {
-            self.x += other;
+            self.x.0 = self.x.0.saturating_add(
+                other.0.try_into().unwrap_or(Inner::MAX)
+            );
         }
     }
 
@@ -624,7 +647,9 @@ pub mod sprite {
 
     impl core::ops::AddAssign<H> for XY {
         fn add_assign(&mut self, other: H) {
-            self.y += other;
+            self.y.0 = self.y.0.saturating_add(
+                other.0.try_into().unwrap_or(Inner::MAX)
+            );
         }
     }
 
@@ -794,17 +819,17 @@ pub mod command {
         H::clipped_inner(a.0.0 / b)
     }
 
-    impl From<X> for usize {
-        fn from(x: X) -> Self {
-            x.0.0.into()
-        }
-    }
-
-    impl From<Y> for usize {
-        fn from(y: Y) -> Self {
-            y.0.0.into()
-        }
-    }
+    //impl From<X> for usize {
+        //fn from(x: X) -> Self {
+            //x.0.0.into()
+        //}
+    //}
+//
+    //impl From<Y> for usize {
+        //fn from(y: Y) -> Self {
+            //y.0.0.into()
+        //}
+    //}
 
     impl From<X> for Inner {
         fn from(to_convert: X) -> Inner {

@@ -94,9 +94,9 @@ fn render(commands: &mut Commands, state: &game::State) {
 
     for grid_x in GRID_X_START..(GRID_X_START + 6) {
         for grid_y in GRID_Y_START..(GRID_Y_START + 8) {
-            let cube_i = usize::from(
+            let cube_i = usize::try_from(
                 ((grid_x ^ grid_y) & 1) as u16
-            );
+            ).unwrap();
 
             let iso_x = (grid_y - grid_x).saturating_sub(6);
             assert!(iso_x >= 0, "grid_x: {grid_x} grid_y: {grid_y}");
@@ -107,10 +107,10 @@ fn render(commands: &mut Commands, state: &game::State) {
                 CUBE_XYS[cube_i],
                 command::Rect::from_unscaled(unscaled::Rect {
                     x: BASE_X + unscaled::W(
-                        iso_x as u16 * CUBE_W.0 / 2
+                        iso_x * CUBE_W.0 / 2
                     ),
                     y: BASE_Y + unscaled::H(
-                        iso_y as u16 * CUBE_H.0 / 4
+                        iso_y * CUBE_H.0 / 4
                     ),
                     w: CUBE_W,
                     h: CUBE_H,

@@ -78,10 +78,10 @@ mod hash {
             colour_override,
         } = command;
 
-        u16(hash, x_min.get().get());
-        u16(hash, y_min.get().get());
-        u16(hash, x_max.get().get());
-        u16(hash, y_max.get().get());
+        u16(hash, x_min.get().get() as u16);
+        u16(hash, y_min.get().get() as u16);
+        u16(hash, x_max.get().get() as u16);
+        u16(hash, y_max.get().get() as u16);
 
         u16(hash, sprite_xy.x.0);
         u16(hash, sprite_xy.y.0);
@@ -993,27 +993,27 @@ pub fn render(
     frame_buffer: &mut FrameBuffer,
     commands: &[Command],
 ) -> NeedsRedraw {
-    if frame_buffer.width < command::WIDTH
-    || frame_buffer.height < command::HEIGHT {
-        frame_buffer.width = command::WIDTH;
-        frame_buffer.height = command::HEIGHT;
+    if frame_buffer.width < command::WIDTH as u16
+    || frame_buffer.height < command::HEIGHT as u16 {
+        frame_buffer.width = command::WIDTH as u16;
+        frame_buffer.height = command::HEIGHT as u16;
     }
 
-    let width_multiplier = frame_buffer.width / command::WIDTH;
-    let height_multiplier = frame_buffer.height / command::HEIGHT;
+    let width_multiplier = frame_buffer.width / command::WIDTH as u16;
+    let height_multiplier = frame_buffer.height / command::HEIGHT as u16;
     let multiplier = core::cmp::min(width_multiplier, height_multiplier);
     if multiplier == 0 {
         debug_assert!(multiplier != 0);
         return NeedsRedraw::No;
     }
 
-    let vertical_bars_width: clip::W = frame_buffer.width - (multiplier * command::WIDTH);
+    let vertical_bars_width: clip::W = frame_buffer.width - (multiplier * command::WIDTH as u16);
 
     let left_bar_width: clip::W = (vertical_bars_width + 1) / 2;
 
     let right_bar_width: clip::W = vertical_bars_width / 2;
 
-    let horizontal_bars_height: clip::H = frame_buffer.height - (multiplier * command::HEIGHT);
+    let horizontal_bars_height: clip::H = frame_buffer.height - (multiplier * command::HEIGHT as u16);
 
     let top_bar_height: clip::H = (horizontal_bars_height + 1) / 2;
 
@@ -1092,10 +1092,15 @@ pub fn render(
         } = rect;
 
         // TODO make this wide too?
-        let x_min = clip::X::from(x_min);
-        let y_min = clip::Y::from(y_min);
-        let x_max = clip::W::from(x_max);
-        let y_max = clip::H::from(y_max);
+        let x_min = i16::from(x_min);
+        let y_min = i16::from(y_min);
+        let x_max = i16::from(x_max);
+        let y_max = i16::from(y_max);
+
+        let x_min = if x_min < 0 { 0 } else { x_min as clip::X };
+        let y_min = if y_min < 0 { 0 } else { y_min as clip::Y };
+        let x_max = if x_max < 0 { 0 } else { x_max as clip::W };
+        let y_max = if y_max < 0 { 0 } else { y_max as clip::H };
 
         let x_end = x_max + 1;
         let y_end = y_max + 1;
@@ -1118,7 +1123,7 @@ pub fn render(
                 );
 
                 let dest_index = usize::from(y)
-                    * usize::from(command::WIDTH)
+                    * usize::from(command::WIDTH as u16)
                     + usize::from(x);
 
                 let unders = unsafe {
@@ -1383,7 +1388,7 @@ pub fn render(
                 }
 
                 x_iter_count += wide::WIDTH as usize;
-                x += wide::WIDTH;
+                x = wide::WIDTH as u16;
             }
 
             y_iter_count += 1;
@@ -1421,7 +1426,7 @@ pub fn render(
         y_remaining -= 1;
         if y_remaining == 0 {
             y_remaining = multiplier;
-            let src_w = usize::from(command::WIDTH);
+            let src_w = usize::from(command::WIDTH as u16);
             src_i += src_w;
         }
     }
