@@ -1388,7 +1388,7 @@ pub fn render(
                 }
 
                 x_iter_count += wide::WIDTH as usize;
-                x = wide::WIDTH as u16;
+                x += wide::WIDTH as u16;
             }
 
             y_iter_count += 1;
