@@ -63,9 +63,48 @@ impl platform_types::State for State {
     }
 }
 
+const DEBUG_I: usize = 15;
+const DEBUG_GRID_X_START: usize = 0;
+const DEBUG_GRID_Y_START: usize = 1;
+const DEBUG_GRID_X_END: usize = 2;
+const DEBUG_GRID_Y_END: usize = 3;
+
 fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
+    match input.button_pressed_this_frame() {
+        Some(Button::A) => {
+            state.debug[DEBUG_I] = state.debug[DEBUG_I].wrapping_sub(1);
+        }
+        Some(Button::B) => {
+            state.debug[DEBUG_I] = state.debug[DEBUG_I].wrapping_add(1);
+        }
+        Some(Button::UP) => {
+            let i = state.debug[DEBUG_I] as usize;
+            if let Some(byte_ref) = state.debug.get_mut(i) {
+                *byte_ref = byte_ref.wrapping_add(1);
+            }
+        }
+        Some(Button::DOWN) => {
+            let i = state.debug[DEBUG_I] as usize;
+            if let Some(byte_ref) = state.debug.get_mut(i) {
+                *byte_ref = byte_ref.wrapping_sub(1);
+            }
+        }
+        Some(Button::RIGHT) => {
+            let i = state.debug[DEBUG_I] as usize;
+            if let Some(byte_ref) = state.debug.get_mut(i) {
+                *byte_ref = byte_ref.wrapping_add(8);
+            }
+        }
+        Some(Button::LEFT) => {
+            let i = state.debug[DEBUG_I] as usize;
+            if let Some(byte_ref) = state.debug.get_mut(i) {
+                *byte_ref = byte_ref.wrapping_sub(8);
+            }
+        }
+        None | _ => {}
+    }
+
     if input.gamepad != <_>::default() {
-        state.add_splat();
         speaker.request_sfx(SFX::CardPlace);
     }
 }
@@ -89,19 +128,19 @@ fn render(commands: &mut Commands, state: &game::State) {
     const BASE_X: unscaled::X = unscaled::X(0);
     const BASE_Y: unscaled::Y = unscaled::Y(0);
 
-    const GRID_X_START: i16 = 2;
-    const GRID_Y_START: i16 = 14;
+    let grid_x_start: i16 = state.debug[DEBUG_GRID_X_START] as i8 as _;
+    let grid_y_start: i16 = state.debug[DEBUG_GRID_Y_START] as i8 as _;
+    let grid_x_end: i16 = state.debug[DEBUG_GRID_X_END] as i8 as _;
+    let grid_y_end: i16 = state.debug[DEBUG_GRID_Y_END] as i8 as _;
 
-    for grid_x in GRID_X_START..(GRID_X_START + 6) {
-        for grid_y in GRID_Y_START..(GRID_Y_START + 8) {
+    for grid_x in grid_x_start..grid_x_end {
+        for grid_y in grid_y_start..grid_y_end {
             let cube_i = usize::try_from(
                 ((grid_x ^ grid_y) & 1) as u16
             ).unwrap();
 
-            let iso_x = (grid_y - grid_x).saturating_sub(6);
-            assert!(iso_x >= 0, "grid_x: {grid_x} grid_y: {grid_y}");
-            let iso_y = (grid_y + grid_x).saturating_sub(GRID_Y_START + 2);
-            assert!(iso_y >= 0, "grid_x: {grid_x} grid_y: {grid_y}");
+            let iso_x = grid_y - grid_x;
+            let iso_y = grid_y + grid_x;
 
             commands.sspr(
                 CUBE_XYS[cube_i],
@@ -119,22 +158,12 @@ fn render(commands: &mut Commands, state: &game::State) {
         }
     }
 
-    for &Splat { kind, x, y } in &state.splats {
-        commands.draw_card(kind, x, y);
-
-        commands.sspr(
-            sprite::XY {
-                x: sprite::X(0),
-                y: sprite::Y(64),
-            },
-            command::Rect::from_unscaled(unscaled::Rect {
-                x: x.saturating_sub(unscaled::W(16)),
-                y: y.saturating_sub(unscaled::H(16)),
-                w: unscaled::W(16),
-                h: unscaled::H(16),
-            })
-        );
-    }
+    commands.print_line(
+        format!("{:?}", state.debug).as_bytes(),
+        unscaled::X(0),
+        unscaled::Y(0),
+        6
+    );
 }
 
 #[inline]

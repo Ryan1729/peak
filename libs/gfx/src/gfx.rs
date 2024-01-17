@@ -30,6 +30,21 @@ impl Commands {
         );
     }
 
+    pub fn print_line(
+        &mut self,
+        line: &[u8],
+        x: unscaled::X,
+        y: unscaled::Y,
+        colour: PaletteIndex
+    ) {
+        let mut x = x;
+        for &byte in line {
+            type Inner = sprite::Inner;
+            self.print_char(byte, x, y, colour);
+            x += CHAR_W;
+        }
+    }
+
     pub fn print_char(
         &mut self,
         character: u8, 

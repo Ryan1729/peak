@@ -1028,6 +1028,34 @@ impl Input {
     pub fn released_this_frame(&self, buttons: Button) -> bool {
         self.previous_gamepad.contains(buttons) && !self.gamepad.contains(buttons)
     }
+
+    pub fn button_pressed_this_frame(&self) -> Option<Button> {
+        if self.pressed_this_frame(Button::A) {
+            return Some(Button::A)
+        }
+        if self.pressed_this_frame(Button::B) {
+            return Some(Button::B)
+        }
+        if self.pressed_this_frame(Button::SELECT) {
+            return Some(Button::SELECT)
+        }
+        if self.pressed_this_frame(Button::START) {
+            return Some(Button::START)
+        }
+        if self.pressed_this_frame(Button::UP) {
+            return Some(Button::UP)
+        }
+        if self.pressed_this_frame(Button::DOWN) {
+            return Some(Button::DOWN)
+        }
+        if self.pressed_this_frame(Button::LEFT) {
+            return Some(Button::LEFT)
+        }
+        if self.pressed_this_frame(Button::RIGHT) {
+            return Some(Button::RIGHT)
+        }
+        None
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
