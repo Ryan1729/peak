@@ -1,6 +1,6 @@
 # peak
 
-This is a template, designed to make using a particular method of cross-platform (desktop and web) development, in a new project, faster.
+A WIP game where you climb.
 
 See below for build/run instructions, and see the `checklist` script for how to get started modifying a copy of the template to suit your needs.
 
