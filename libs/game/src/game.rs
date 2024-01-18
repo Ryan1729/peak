@@ -17,10 +17,14 @@ pub struct State {
 
 impl State {
     pub fn new(seed: Seed) -> State {
+        let mut debug: [u8; 16] = <_>::default();
+        debug[2] = 2;
+        debug[3] = 2;
         let rng = xs::from_seed(seed);
 
         State {
             rng,
+            debug,
             .. <_>::default()
         }
     }

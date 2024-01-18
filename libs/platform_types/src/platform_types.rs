@@ -683,6 +683,7 @@ pub mod command {
     pub struct X(unscaled::X);
 
     impl X {
+        pub const ZERO: X = X(unscaled::X(0));
         pub const MAX: X = X(unscaled::X(WIDTH - 1));
 
         pub const fn get(self) -> unscaled::X {
@@ -690,7 +691,9 @@ pub mod command {
         }
 
         pub const fn clipped(x: unscaled::X) -> X {
-            if x.0 < X::MAX.0.0 {
+            if x.0 < 0 {
+                X::ZERO
+            } else if x.0 < X::MAX.0.0 {
                 X(x)
             } else {
                 X::MAX
@@ -710,6 +713,7 @@ pub mod command {
     pub struct Y(unscaled::Y);
 
     impl Y {
+        pub const ZERO: Y = Y(unscaled::Y(0));
         pub const MAX: Y = Y(unscaled::Y(HEIGHT - 1));
 
         pub const fn get(self) -> unscaled::Y {
@@ -717,7 +721,9 @@ pub mod command {
         }
 
         pub const fn clipped(y: unscaled::Y) -> Y {
-            if y.0 < Y::MAX.0.0 {
+            if y.0 < 0 {
+                Y::ZERO
+            } else if y.0 < Y::MAX.0.0 {
                 Y(y)
             } else {
                 Y::MAX
@@ -1003,6 +1009,8 @@ pub mod command {
         assert_eq!(expected, actual);
     }
 
+    // FIXME We need to adjust the sprite_xy according to the clipping
+    // if any happens.
     #[derive(Clone, Copy, Debug, Default)]
     pub struct Command {
         pub rect: Rect,

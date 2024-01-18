@@ -192,8 +192,8 @@ mod reset_then_hash_commands_around_a_swap_produces_identical_current_and_prev_c
             unscaled::Rect {
                 x: unscaled::X(0),
                 y: unscaled::Y(0),
-                w: unscaled::W(CELLS_W),
-                h: unscaled::H(CELLS_H),
+                w: unscaled::W(CELLS_W as _),
+                h: unscaled::H(CELLS_H as _),
             }
         );
 
@@ -586,7 +586,7 @@ mod wide {
         (
             $addr: expr $(,)?
         ) => ({
-            
+
             use core::arch::wasm32::v128 as V;
 
             let addr: *const _ = $addr;
@@ -1097,17 +1097,17 @@ pub fn render(
         let x_max = i16::from(x_max);
         let y_max = i16::from(y_max);
 
-        let x_min = if x_min < 0 { 0 } else { x_min as clip::X };
-        let y_min = if y_min < 0 { 0 } else { y_min as clip::Y };
-        let x_max = if x_max < 0 { 0 } else { x_max as clip::W };
-        let y_max = if y_max < 0 { 0 } else { y_max as clip::H };
+        let sprite_x = usize::from(sprite_x);
+        let sprite_y = usize::from(sprite_y);
+
+        let x_min = x_min as clip::X;
+        let y_min = y_min as clip::Y;
+        let x_max = x_max as clip::W;
+        let y_max = y_max as clip::H;
 
         let x_end = x_max + 1;
         let y_end = y_max + 1;
         let wide_x_end = wide::i32!(x_end.into());
-
-        let sprite_x = usize::from(sprite_x);
-        let sprite_y = usize::from(sprite_y);
 
         let src_w = GFX_WIDTH as usize;
 
@@ -1137,10 +1137,10 @@ pub fn render(
                     (sprite_y + y_iter_count) * src_w
                     + (sprite_x + x_iter_count);
                 debug_assert!(
-                    base_src_i < GFX.len(), 
+                    base_src_i < GFX.len(),
                     "({sprite_y} + {y_iter_count}) * {src_w} + ({sprite_x} + {x_iter_count})
 {base_src_i} >= {}
-({x_min} to {x_end}, {y_min} to {y_end})",
+({x_min} to {x_end}, {y_min} to {y_end}) {rect:?}",
                     GFX.len()
                 );
                 let gfx_colours = unsafe {
@@ -1434,4 +1434,24 @@ pub fn render(
     frame_buffer.cells.swap();
 
     NeedsRedraw::Yes
+}
+
+#[test]
+fn render_does_not_panic_on_these_examples() {
+    let commands = [
+        Command {
+            rect: Rect {
+                x_min: command::X::clipped_inner(-166),
+                y_min: command::Y::clipped_inner(96),
+                x_max: command::X::clipped_inner(-56),
+                y_max: command::Y::clipped_inner(223),
+            },
+            sprite_xy: sprite::XY { x: sprite::X(128), y: sprite::Y(128) },
+            .. Command::default()
+        },
+    ];
+
+    let mut buffer = FrameBuffer::from_size((400, 300));
+
+    render(&mut buffer, &commands);
 }
