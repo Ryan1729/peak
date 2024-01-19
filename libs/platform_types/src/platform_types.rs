@@ -825,18 +825,6 @@ pub mod command {
         H::clipped_inner(a.0.0 / b)
     }
 
-    //impl From<X> for usize {
-        //fn from(x: X) -> Self {
-            //x.0.0.into()
-        //}
-    //}
-//
-    //impl From<Y> for usize {
-        //fn from(y: Y) -> Self {
-            //y.0.0.into()
-        //}
-    //}
-
     impl From<X> for Inner {
         fn from(to_convert: X) -> Inner {
             to_convert.0.0
@@ -1009,14 +997,68 @@ pub mod command {
         assert_eq!(expected, actual);
     }
 
-    // FIXME We need to adjust the sprite_xy according to the clipping
-    // if any happens.
     #[derive(Clone, Copy, Debug, Default)]
     pub struct Command {
         pub rect: Rect,
         pub sprite_xy: sprite::XY,
         pub colour_override: ARGB,
-    }    
+    }
+
+    pub struct ClippedAway;
+
+    impl Command {
+        // TODO? make this the only way to construct `Command`s?
+        // Bit of a hassle to update the accesses of the fields.
+        pub fn clipped(
+            rect: unscaled::Rect,
+            mut sprite_xy: sprite::XY,
+            colour_override: ARGB,
+        ) -> Result<Self, ClippedAway> {
+            // We need to adjust the sprite_xy according to the clipping
+            // if any happens, so we don't end up with te sprite being
+            // misaligned.
+            let x_min = if rect.x.0 < 0 {
+                sprite_xy.x.0 = sprite_xy.x.0.saturating_add(rect.x.0.abs() as _);
+                X::ZERO
+            } else if rect.x.0 < X::MAX.0.0 {
+                X(rect.x)
+            } else {
+                X::MAX
+            };
+
+            let y_min = if rect.y.0 < 0 {
+                sprite_xy.y.0 = sprite_xy.y.0.saturating_add(rect.y.0.abs() as _);
+                Y::ZERO
+            } else if rect.y.0 < Y::MAX.0.0 {
+                Y(rect.y)
+            } else {
+                Y::MAX
+            };
+
+            let x_max = (rect.x + rect.w).get() - 1;
+            if x_max < 0 {
+                return Err(ClippedAway)
+            }
+            let y_max = (rect.y + rect.h).get() - 1;
+            if y_max < 0 {
+                return Err(ClippedAway)
+            }
+
+            let x_max = X::clipped_inner(x_max);
+            let y_max = Y::clipped_inner(y_max);
+
+            Ok(Self {
+                rect: Rect {
+                    x_min,
+                    y_min,
+                    x_max,
+                    y_max,
+                },
+                sprite_xy,
+                colour_override,
+            })
+        }
+    }
 }
 pub use command::Command;
 

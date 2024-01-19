@@ -19,15 +19,15 @@ impl Commands {
     pub fn sspr(
         &mut self,
         sprite_xy: sprite::XY,
-        rect: command::Rect,
+        rect: unscaled::Rect,
     ) {
-        self.commands.push(
-            Command {
-                sprite_xy,
-                rect,
-                colour_override: 0,
-            }
-        );
+        if let Ok(cmd) = Command::clipped(
+            rect,
+            sprite_xy,
+            0,
+        ) {
+            self.commands.push(cmd);
+        }
     }
 
     pub fn print_line(
@@ -70,18 +70,19 @@ impl Commands {
         }
 
         let sprite_xy = get_char_xy(character);
-        self.commands.push(
-            Command {
-                sprite_xy,
-                rect: Rect::from_unscaled(unscaled::Rect {
-                    x,
-                    y,
-                    w: CHAR_W,
-                    h: CHAR_H,
-                }),
-                colour_override: PALETTE[colour as usize],
-            }
-        );
+
+        if let Ok(cmd) = Command::clipped(
+            unscaled::Rect {
+                x,
+                y,
+                w: CHAR_W,
+                h: CHAR_H,
+            },
+            sprite_xy,
+            PALETTE[colour as usize],
+        ) {
+            self.commands.push(cmd);
+        }
     }
 
     pub fn draw_card(
@@ -95,12 +96,12 @@ impl Commands {
                 x: sprite::X(card::FRONT_SPRITE_X as _),
                 y: sprite::Y(card::FRONT_SPRITE_Y as _),
             },
-            Rect::from_unscaled(unscaled::Rect {
+            unscaled::Rect {
                 x,
                 y,
                 w: card::WIDTH,
                 h: card::HEIGHT,
-            })
+            }
         );
 
         let (colour, suit_char) = get_suit_colour_and_char(get_suit(card));

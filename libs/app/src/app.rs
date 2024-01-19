@@ -144,7 +144,7 @@ fn render(commands: &mut Commands, state: &game::State) {
 
             commands.sspr(
                 CUBE_XYS[cube_i],
-                command::Rect::from_unscaled(unscaled::Rect {
+                unscaled::Rect {
                     x: BASE_X + unscaled::W(
                         iso_x * CUBE_W.0 / 2
                     ),
@@ -153,7 +153,7 @@ fn render(commands: &mut Commands, state: &game::State) {
                     ),
                     w: CUBE_W,
                     h: CUBE_H,
-                })
+                }
             );
         }
     }
