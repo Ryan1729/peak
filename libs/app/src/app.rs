@@ -68,6 +68,8 @@ const DEBUG_GRID_X_START: usize = 0;
 const DEBUG_GRID_Y_START: usize = 1;
 const DEBUG_GRID_X_END: usize = 2;
 const DEBUG_GRID_Y_END: usize = 3;
+const DEBUG_Z1: usize = 4;
+const DEBUG_Z2: usize = 5;
 
 fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
     match input.button_pressed_this_frame() {
@@ -133,14 +135,19 @@ fn render(commands: &mut Commands, state: &game::State) {
     let grid_x_end: i16 = state.debug[DEBUG_GRID_X_END] as i8 as _;
     let grid_y_end: i16 = state.debug[DEBUG_GRID_Y_END] as i8 as _;
 
+    let z1: i16 = state.debug[DEBUG_Z1] as i8 as _;
+    let z2: i16 = state.debug[DEBUG_Z2] as i8 as _;
+
     for grid_x in grid_x_start..grid_x_end {
         for grid_y in grid_y_start..grid_y_end {
+            let z3 = ((grid_x ^ grid_y) & 1) as u16;
+
             let cube_i = usize::try_from(
-                ((grid_x ^ grid_y) & 1) as u16
+                z3
             ).unwrap();
 
-            let iso_x = grid_y - grid_x;
-            let iso_y = grid_y + grid_x;
+            let iso_x = grid_y - grid_x + z1;
+            let iso_y = grid_y + grid_x + z2 + (z3 << 1) as i16;
 
             commands.sspr(
                 CUBE_XYS[cube_i],
