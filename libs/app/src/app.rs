@@ -1,4 +1,4 @@
-use game::Splat;
+use game::{CUBE_H, CUBE_W, GRID_W, Cell, Grid};
 use gfx::{Commands};
 use platform_types::{command, sprite, unscaled, Button, Input, Speaker, SFX};
 pub use platform_types::StateParams;
@@ -111,22 +111,53 @@ fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
     }
 }
 
+type GridInner = u8;
+type GridX = GridInner;
+type GridY = GridInner;
+
+struct DrawIter<'grid> {
+    grid: &'grid Grid,
+    x: GridX,
+    y: GridY,
+}
+
+impl <'grid> DrawIter<'grid> {
+    fn of(grid: &'grid Grid) -> Self {
+        Self {
+            grid,
+            x: 0,
+            y: 0,
+        }
+    }
+}
+
+impl Iterator for DrawIter<'_> {
+    type Item = ((i16, i16), Cell);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // FIXME iterate in such a way that with a naive draw loop body
+        // things overlap correctly, with blocks filled in below other
+        // ones. Presumably something like bottom, back corner then the
+        // three ones adjacent to that, then the next slice and so on.
+        // Will need to add more cells to fill below things
+
+        let x = self.x;
+        let y = self.y;
+        self.x += 1;
+        if self.x >= GRID_W as _ {
+            self.x = 0;
+            self.y += 1;
+        }
+
+        let index = y * GRID_W as GridInner + x;
+        self.grid.get(usize::from(index))
+            .cloned()
+            .map(|cell| ((x as i16, y as i16), cell))
+    }
+}
+
 #[inline]
 fn render(commands: &mut Commands, state: &game::State) {
-    const CUBE_W: unscaled::W = unscaled::W(111);
-    const CUBE_H: unscaled::H = unscaled::H(128);
-
-    const CUBE_XYS: [sprite::XY; 2] = [
-        sprite::XY {
-            x: sprite::X(128),
-            y: sprite::Y(0),
-        },
-        sprite::XY {
-            x: sprite::X(128),
-            y: sprite::Y(128),
-        },
-    ];
-
     const BASE_X: unscaled::X = unscaled::X(0);
     const BASE_Y: unscaled::Y = unscaled::Y(0);
 
@@ -138,31 +169,27 @@ fn render(commands: &mut Commands, state: &game::State) {
     let z1: i16 = state.debug[DEBUG_Z1] as i8 as _;
     let z2: i16 = state.debug[DEBUG_Z2] as i8 as _;
 
-    for grid_x in grid_x_start..grid_x_end {
-        for grid_y in grid_y_start..grid_y_end {
-            let z3 = ((grid_x ^ grid_y) & 1) as u16;
+    // TODO loop over a board and draw in such a way that things overlap
+    // correctly, with blocks filled in below other ones. Presumably 
+    // something like bottom, back corner then the three ones adjacent
+    // to that, then the next slice and so on.
+    for ((grid_x, grid_y), cell) in DrawIter::of(&state.grid) {
+        let iso_x = grid_y - grid_x + z1;
+        let iso_y = grid_y + grid_x + cell.hz as i16 + z2;
 
-            let cube_i = usize::try_from(
-                z3
-            ).unwrap();
-
-            let iso_x = grid_y - grid_x + z1;
-            let iso_y = grid_y + grid_x + z2 + (z3 << 1) as i16;
-
-            commands.sspr(
-                CUBE_XYS[cube_i],
-                unscaled::Rect {
-                    x: BASE_X + unscaled::W(
-                        iso_x * CUBE_W.0 / 2
-                    ),
-                    y: BASE_Y + unscaled::H(
-                        iso_y * CUBE_H.0 / 4
-                    ),
-                    w: CUBE_W,
-                    h: CUBE_H,
-                }
-            );
-        }
+        commands.sspr(
+            game::CUBE_XYS[usize::from(cell.cube_i)],
+            unscaled::Rect {
+                x: BASE_X + unscaled::W(
+                    iso_x * CUBE_W.0 / 2
+                ),
+                y: BASE_Y + unscaled::H(
+                    iso_y * CUBE_H.0 / 4
+                ),
+                w: CUBE_W,
+                h: CUBE_H,
+            }
+        );
     }
 
     commands.print_line(
