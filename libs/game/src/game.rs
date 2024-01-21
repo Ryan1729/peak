@@ -12,13 +12,21 @@ pub struct Splat {
 pub const CUBE_W: unscaled::W = unscaled::W(111);
 pub const CUBE_H: unscaled::H = unscaled::H(128);
 
-pub const CUBE_XYS: [sprite::XY; 2] = [
+pub const CUBE_XYS: [sprite::XY; 4] = [
     sprite::XY {
         x: sprite::X(128),
         y: sprite::Y(0),
     },
     sprite::XY {
         x: sprite::X(128),
+        y: sprite::Y(128),
+    },
+    sprite::XY {
+        x: sprite::X(240),
+        y: sprite::Y(0),
+    },
+    sprite::XY {
+        x: sprite::X(240),
         y: sprite::Y(128),
     },
 ];
@@ -40,9 +48,14 @@ pub const GRID_H: u8 = 4;
 pub const GRID_LEN: u16 = GRID_W as u16 * GRID_H as u16;
 pub type Grid = [Cell; GRID_LEN as usize];
 
+pub type CameraX = i16;
+pub type CameraY = i16;
+
 #[derive(Clone, Default)]
 pub struct State {
     pub rng: Xs,
+    pub camera_x: CameraX,
+    pub camera_y: CameraY,
     pub debug: [u8; 16],
     pub grid: Grid,
 }
@@ -57,6 +70,7 @@ impl State {
         let mut grid = [Cell::default(); GRID_LEN as usize];
 
         for i in 0..grid.len() {
+            grid[i].cube_i = (2 + (i & 0b1)) as _;
             grid[i].hz = (i & 0b11) as _;
         }
 

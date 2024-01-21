@@ -63,6 +63,7 @@ impl platform_types::State for State {
     }
 }
 
+const DEBUG_MODE: usize = 14;
 const DEBUG_I: usize = 15;
 const DEBUG_GRID_X_START: usize = 0;
 const DEBUG_GRID_Y_START: usize = 1;
@@ -72,38 +73,71 @@ const DEBUG_Z1: usize = 4;
 const DEBUG_Z2: usize = 5;
 
 fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
-    match input.button_pressed_this_frame() {
-        Some(Button::A) => {
-            state.debug[DEBUG_I] = state.debug[DEBUG_I].wrapping_sub(1);
+    let pressed = input.button_pressed_this_frame();
+
+    match pressed {
+        Some(Button::START) => {
+            state.debug[DEBUG_MODE] = state.debug[DEBUG_MODE].wrapping_sub(1);
         }
-        Some(Button::B) => {
-            state.debug[DEBUG_I] = state.debug[DEBUG_I].wrapping_add(1);
-        }
-        Some(Button::UP) => {
-            let i = state.debug[DEBUG_I] as usize;
-            if let Some(byte_ref) = state.debug.get_mut(i) {
-                *byte_ref = byte_ref.wrapping_add(1);
-            }
-        }
-        Some(Button::DOWN) => {
-            let i = state.debug[DEBUG_I] as usize;
-            if let Some(byte_ref) = state.debug.get_mut(i) {
-                *byte_ref = byte_ref.wrapping_sub(1);
-            }
-        }
-        Some(Button::RIGHT) => {
-            let i = state.debug[DEBUG_I] as usize;
-            if let Some(byte_ref) = state.debug.get_mut(i) {
-                *byte_ref = byte_ref.wrapping_add(8);
-            }
-        }
-        Some(Button::LEFT) => {
-            let i = state.debug[DEBUG_I] as usize;
-            if let Some(byte_ref) = state.debug.get_mut(i) {
-                *byte_ref = byte_ref.wrapping_sub(8);
-            }
+        Some(Button::SELECT) => {
+            state.debug[DEBUG_MODE] = state.debug[DEBUG_MODE].wrapping_add(1);
         }
         None | _ => {}
+    }
+
+    match state.debug[DEBUG_MODE] {
+        1 => {
+            match pressed {
+                Some(Button::UP) => {
+                    state.camera_y = state.camera_y.wrapping_sub(1);
+                }
+                Some(Button::DOWN) => {
+                    state.camera_y = state.camera_y.wrapping_add(1);
+                }
+                Some(Button::LEFT) => {
+                    state.camera_x = state.camera_x.wrapping_sub(1);
+                }
+                Some(Button::RIGHT) => {
+                    state.camera_x = state.camera_x.wrapping_add(1);
+                }
+                None | _ => {}
+            }
+        }
+        0 | _ => {
+            match pressed {
+                Some(Button::A) => {
+                    state.debug[DEBUG_I] = state.debug[DEBUG_I].wrapping_sub(1);
+                }
+                Some(Button::B) => {
+                    state.debug[DEBUG_I] = state.debug[DEBUG_I].wrapping_add(1);
+                }
+                Some(Button::UP) => {
+                    let i = state.debug[DEBUG_I] as usize;
+                    if let Some(byte_ref) = state.debug.get_mut(i) {
+                        *byte_ref = byte_ref.wrapping_add(1);
+                    }
+                }
+                Some(Button::DOWN) => {
+                    let i = state.debug[DEBUG_I] as usize;
+                    if let Some(byte_ref) = state.debug.get_mut(i) {
+                        *byte_ref = byte_ref.wrapping_sub(1);
+                    }
+                }
+                Some(Button::RIGHT) => {
+                    let i = state.debug[DEBUG_I] as usize;
+                    if let Some(byte_ref) = state.debug.get_mut(i) {
+                        *byte_ref = byte_ref.wrapping_add(8);
+                    }
+                }
+                Some(Button::LEFT) => {
+                    let i = state.debug[DEBUG_I] as usize;
+                    if let Some(byte_ref) = state.debug.get_mut(i) {
+                        *byte_ref = byte_ref.wrapping_sub(8);
+                    }
+                }
+                None | _ => {}
+            }
+        }
     }
 
     if input.gamepad != <_>::default() {
@@ -174,8 +208,8 @@ fn render(commands: &mut Commands, state: &game::State) {
     // something like bottom, back corner then the three ones adjacent
     // to that, then the next slice and so on.
     for ((grid_x, grid_y), cell) in DrawIter::of(&state.grid) {
-        let iso_x = grid_y - grid_x + z1;
-        let iso_y = grid_y + grid_x + cell.hz as i16 + z2;
+        let iso_x = grid_y - grid_x + state.camera_x;
+        let iso_y = grid_y + grid_x + cell.hz as i16 + state.camera_y;
 
         commands.sspr(
             game::CUBE_XYS[usize::from(cell.cube_i)],
