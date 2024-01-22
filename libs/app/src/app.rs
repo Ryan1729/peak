@@ -153,14 +153,45 @@ struct DrawIter<'grid> {
     grid: &'grid Grid,
     x: GridX,
     y: GridY,
+    hardcoded: [((i16, i16), Cell); 8],
 }
 
 impl <'grid> DrawIter<'grid> {
     fn of(grid: &'grid Grid) -> Self {
+        macro_rules! c {
+            ($i: literal) => ({
+                Cell {
+                    cube_i: $i,
+                    ..Cell::default()
+                }
+            })
+        }
         Self {
             grid,
             x: 0,
             y: 0,
+            hardcoded: [
+                ((0, 0), Cell {
+                    cube_i: 0,
+                    hz: 2,
+                }),
+                ((1, 0), Cell {
+                    cube_i: 0,
+                    hz: 2,
+                }),
+                ((0, 1), Cell {
+                    cube_i: 0,
+                    hz: 2,
+                }),
+                ((1, 1), Cell {
+                    cube_i: 0,
+                    hz: 2,
+                }),
+                ((0, 0), c!(1)),
+                ((1, 0), c!(1)),
+                ((0, 1), c!(1)),
+                ((1, 1), c!(1)),
+            ],
         }
     }
 }
@@ -175,20 +206,31 @@ impl Iterator for DrawIter<'_> {
         // three ones adjacent to that, then the next slice and so on.
         // Will need to add more cells to fill below things
 
-        let x = self.x;
-        let y = self.y;
+        let i = self.x as usize;
         self.x += 1;
-        if self.x >= GRID_W as _ {
-            self.x = 0;
-            self.y += 1;
-        }
+        self.hardcoded.get(i).cloned()
 
-        let index = y * GRID_W as GridInner + x;
-        self.grid.get(usize::from(index))
-            .cloned()
-            .map(|cell| ((x as i16, y as i16), cell))
+        //let x = self.x;
+        //let y = self.y;
+        //self.x += 1;
+        //if self.x >= GRID_W as _ {
+            //self.x = 0;
+            //self.y += 1;
+        //}
+//
+        //let index = y * GRID_W as GridInner + x;
+        //self.grid.get(usize::from(index))
+            //.cloned()
+            //.map(|cell| ((x as i16, y as i16), cell))
     }
 }
+
+//#[test]
+//fn draw_iter_iterates_in_the_expected_orrder_over_these_examples() {
+    //let default_grid: Grid<4> = <_>::default();
+//
+    //
+//}
 
 #[inline]
 fn render(commands: &mut Commands, state: &game::State) {

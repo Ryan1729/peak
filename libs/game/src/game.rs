@@ -46,7 +46,7 @@ pub struct Cell {
 pub const GRID_W: u8 = 4;
 pub const GRID_H: u8 = 4;
 pub const GRID_LEN: u16 = GRID_W as u16 * GRID_H as u16;
-pub type Grid = [Cell; GRID_LEN as usize];
+pub type Grid<const LEN: usize = {GRID_LEN as usize}> = [Cell; LEN];
 
 pub type CameraX = i16;
 pub type CameraY = i16;
