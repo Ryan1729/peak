@@ -153,12 +153,18 @@ struct DrawIter<'grid> {
     grid: &'grid Grid,
     x: GridX,
     y: GridY,
-    hardcoded: [((i16, i16), Cell); 8],
+    hardcoded: [((i16, i16), Cell); 18],
 }
 
 impl <'grid> DrawIter<'grid> {
     fn of(grid: &'grid Grid) -> Self {
         macro_rules! c {
+            () => ({
+                Cell {
+                    cube_i: 0,
+                    hz: 2,
+                }
+            });
             ($i: literal) => ({
                 Cell {
                     cube_i: $i,
@@ -171,26 +177,25 @@ impl <'grid> DrawIter<'grid> {
             x: 0,
             y: 0,
             hardcoded: [
-                ((0, 0), Cell {
-                    cube_i: 0,
-                    hz: 2,
-                }),
-                ((1, 0), Cell {
-                    cube_i: 0,
-                    hz: 2,
-                }),
-                ((0, 1), Cell {
-                    cube_i: 0,
-                    hz: 2,
-                }),
-                ((1, 1), Cell {
-                    cube_i: 0,
-                    hz: 2,
-                }),
+                ((0, 0), c!()),
+                ((1, 0), c!()),
+                ((0, 1), c!()),
+                ((2, 0), c!()),
+                ((1, 1), c!()),
+                ((0, 2), c!()),
+                ((2, 1), c!()),
+                ((1, 2), c!()),
+                ((2, 2), c!()),
+
                 ((0, 0), c!(1)),
                 ((1, 0), c!(1)),
                 ((0, 1), c!(1)),
+                ((2, 0), c!(1)),
                 ((1, 1), c!(1)),
+                ((0, 2), c!(1)),
+                ((2, 1), c!(1)),
+                ((1, 2), c!(1)),
+                ((2, 2), c!(1)),
             ],
         }
     }
@@ -200,28 +205,57 @@ impl Iterator for DrawIter<'_> {
     type Item = ((i16, i16), Cell);
 
     fn next(&mut self) -> Option<Self::Item> {
-        // FIXME iterate in such a way that with a naive draw loop body
+        // Iterate in such a way that with a naive draw loop body
         // things overlap correctly, with blocks filled in below other
-        // ones. Presumably something like bottom, back corner then the
-        // three ones adjacent to that, then the next slice and so on.
-        // Will need to add more cells to fill below things
+        // ones. That is, bottom, back corner then the three ones adjacent
+        // to that, then the next slice and so on.
+        // It turns out that to make that pattern, we can create all the
+        // coords with a given sum, least to greatest. Maintaining a square
+        // can be done by keeping the value of any one coord within the
+        // desired range. Probably relies on being based at the origin.
 
-        let i = self.x as usize;
-        self.x += 1;
-        self.hardcoded.get(i).cloned()
+        // Additionally, add more cells to fill below things
 
-        //let x = self.x;
-        //let y = self.y;
+        //let i = self.x as usize;
         //self.x += 1;
-        //if self.x >= GRID_W as _ {
-            //self.x = 0;
-            //self.y += 1;
-        //}
-//
-        //let index = y * GRID_W as GridInner + x;
-        //self.grid.get(usize::from(index))
-            //.cloned()
-            //.map(|cell| ((x as i16, y as i16), cell))
+        //self.hardcoded.get(i).cloned()
+
+        let x = self.x;
+        let y = self.y;
+
+        const MAX: u8 = 3;
+
+        if self.x >= MAX
+        && self.y >= MAX {
+            return None
+        }
+
+        loop {
+            if self.x == 0 {
+                self.x = self.y + 1;
+                self.y = 0;
+            } else {
+                self.x -= 1;
+                self.y += 1;
+            }
+
+            if self.x >= MAX
+            && self.y >= MAX {
+                break
+            }
+
+            if self.x >= MAX
+            || self.y >= MAX {
+                continue
+            }
+
+            break
+        }
+
+        let index = y * GRID_W as GridInner + x;
+        self.grid.get(usize::from(index))
+            .cloned()
+            .map(|cell| ((x as i16, y as i16), cell))
     }
 }
 
