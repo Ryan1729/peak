@@ -1,4 +1,4 @@
-use game::{CUBE_H, CUBE_W, GRID_W, Cell, Grid};
+use game::{CUBE_H, CUBE_W, GRID_W, HZ, HZ_BOTTOM, Cell, Grid};
 use gfx::{Commands};
 use platform_types::{command, sprite, unscaled, Button, Input, Speaker, SFX};
 pub use platform_types::StateParams;
@@ -149,59 +149,23 @@ type GridInner = u8;
 type GridX = GridInner;
 type GridY = GridInner;
 
-struct DrawIter<'grid> {
+struct LayerDrawIter<'grid> {
     grid: &'grid Grid,
     x: GridX,
     y: GridY,
-    hardcoded: [((i16, i16), Cell); 18],
 }
 
-impl <'grid> DrawIter<'grid> {
+impl <'grid> LayerDrawIter<'grid> {
     fn of(grid: &'grid Grid) -> Self {
-        macro_rules! c {
-            () => ({
-                Cell {
-                    cube_i: 0,
-                    hz: 2,
-                }
-            });
-            ($i: literal) => ({
-                Cell {
-                    cube_i: $i,
-                    ..Cell::default()
-                }
-            })
-        }
         Self {
             grid,
             x: 0,
             y: 0,
-            hardcoded: [
-                ((0, 0), c!()),
-                ((1, 0), c!()),
-                ((0, 1), c!()),
-                ((2, 0), c!()),
-                ((1, 1), c!()),
-                ((0, 2), c!()),
-                ((2, 1), c!()),
-                ((1, 2), c!()),
-                ((2, 2), c!()),
-
-                ((0, 0), c!(1)),
-                ((1, 0), c!(1)),
-                ((0, 1), c!(1)),
-                ((2, 0), c!(1)),
-                ((1, 1), c!(1)),
-                ((0, 2), c!(1)),
-                ((2, 1), c!(1)),
-                ((1, 2), c!(1)),
-                ((2, 2), c!(1)),
-            ],
         }
     }
 }
 
-impl Iterator for DrawIter<'_> {
+impl Iterator for LayerDrawIter<'_> {
     type Item = ((i16, i16), Cell);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -259,12 +223,39 @@ impl Iterator for DrawIter<'_> {
     }
 }
 
-//#[test]
-//fn draw_iter_iterates_in_the_expected_orrder_over_these_examples() {
-    //let default_grid: Grid<4> = <_>::default();
-//
-    //
-//}
+struct DrawIter<'grid> {
+    layer_iter: std::iter::Peekable<LayerDrawIter<'grid>>,
+    hz: game::HZ,
+}
+
+impl <'grid> DrawIter<'grid> {
+    fn of(grid: &'grid Grid) -> Self {
+        Self {
+            layer_iter: LayerDrawIter::of(grid).peekable(),
+            hz: HZ_BOTTOM,
+        }
+    }
+}
+
+impl Iterator for DrawIter<'_> {
+    type Item = ((i16, i16), Cell);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // add more cells to fill below things
+        if let Some(&((x, y), cell)) = self.layer_iter.peek() {
+            if self.hz == 0 || self.hz == cell.hz {
+                self.hz = HZ_BOTTOM;
+                self.layer_iter.next()
+            } else {
+                let hz = self.hz;
+                self.hz = self.hz.saturating_sub(2);
+                Some(((x, y), Cell { hz, cube_i: 0 }))
+            }
+        } else {
+            None
+        }
+    }
+}
 
 #[inline]
 fn render(commands: &mut Commands, state: &game::State) {
