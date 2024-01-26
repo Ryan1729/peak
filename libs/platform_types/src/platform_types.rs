@@ -584,8 +584,8 @@ pub mod sprite {
     pub const fn x_const_add_w(x: X, w: W) -> X {
         X(
             x.0.saturating_add(
-                if w.0 > (Inner::MAX as LengthInner) {
-                    Inner::MAX
+                if w.0 > LengthInner::MAX {
+                    LengthInner::MAX as Inner
                 } else {
                     w.0 as Inner
                 }
@@ -1015,7 +1015,7 @@ pub mod command {
             colour_override: ARGB,
         ) -> Result<Self, ClippedAway> {
             // We need to adjust the sprite_xy according to the clipping
-            // if any happens, so we don't end up with te sprite being
+            // if any happens, so we don't end up with the sprite being
             // misaligned.
             let x_min = if rect.x.0 < 0 {
                 sprite_xy.x.0 = sprite_xy.x.0.saturating_add(rect.x.0.abs() as _);

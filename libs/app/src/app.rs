@@ -17,6 +17,7 @@ impl State {
             features::GLOBAL_ERROR_LOGGER = error_logger;
         }
 
+        let seed = [250, 32, 206, 198, 29, 107, 217, 65, 131, 103, 255, 37, 147, 36, 4, 62];
         // We always want to log the seed, if there is a logger available, so use the function,
         // not the macro.
         features::log(&format!("{:?}", seed));
@@ -272,7 +273,7 @@ fn render(commands: &mut Commands, state: &game::State) {
         let iso_y = grid_y + grid_x + cell.hz as i16 + state.camera_y;
 
         commands.sspr(
-            game::CUBE_XYS[usize::from(cell.cube_i)],
+            dbg!(game::CUBE_XYS[usize::from(cell.cube_i)]),
             unscaled::Rect {
                 x: BASE_X + unscaled::W(
                     iso_x * CUBE_W.0 / 2
@@ -292,6 +293,15 @@ fn render(commands: &mut Commands, state: &game::State) {
         unscaled::Y(0),
         6
     );
+
+    if state.grid.len() <= 16 {
+        commands.print_line(
+            format!("{:?}", state.grid).as_bytes(),
+            unscaled::X(0),
+            unscaled::Y(16),
+            6
+        );
+    }
 }
 
 #[inline]
