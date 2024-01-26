@@ -1,4 +1,4 @@
-use game::{CUBE_H, CUBE_W, GRID_W, HZ, HZ_BOTTOM, Cell, Grid};
+use game::{CUBE_H, CUBE_W, GRID_W, GRID_H, HZ, HZ_BOTTOM, Cell, Grid};
 use gfx::{Commands};
 use platform_types::{command, sprite, unscaled, Button, Input, Speaker, SFX};
 pub use platform_types::StateParams;
@@ -145,7 +145,7 @@ fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
     }
 }
 
-type GridInner = u8;
+type GridInner = u16;
 type GridX = GridInner;
 type GridY = GridInner;
 
@@ -177,17 +177,14 @@ impl Iterator for LayerDrawIter<'_> {
         // coords with a given sum, least to greatest. Maintaining a square
         // can be done by keeping the value of any one coord within the
         // desired range. Probably relies on being based at the origin.
-
-        // Additionally, add more cells to fill below things
-
-        //let i = self.x as usize;
-        //self.x += 1;
-        //self.hardcoded.get(i).cloned()
-
         let x = self.x;
         let y = self.y;
 
-        const MAX: u8 = 3;
+        const MAX: u16 = if GRID_W > GRID_H {
+            GRID_W
+        } else {
+            GRID_H
+        } as u16;
 
         if self.x >= MAX
         && self.y >= MAX {
@@ -270,10 +267,6 @@ fn render(commands: &mut Commands, state: &game::State) {
     let z1: i16 = state.debug[DEBUG_Z1] as i8 as _;
     let z2: i16 = state.debug[DEBUG_Z2] as i8 as _;
 
-    // TODO loop over a board and draw in such a way that things overlap
-    // correctly, with blocks filled in below other ones. Presumably 
-    // something like bottom, back corner then the three ones adjacent
-    // to that, then the next slice and so on.
     for ((grid_x, grid_y), cell) in DrawIter::of(&state.grid) {
         let iso_x = grid_y - grid_x + state.camera_x;
         let iso_y = grid_y + grid_x + cell.hz as i16 + state.camera_y;

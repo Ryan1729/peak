@@ -45,15 +45,15 @@ pub struct Cell {
     pub cube_i: CubeIndex,
 }
 
-pub const GRID_W: u8 = 4;
-pub const GRID_H: u8 = 4;
+pub const GRID_W: u8 = 16;
+pub const GRID_H: u8 = 16;
 pub const GRID_LEN: u16 = GRID_W as u16 * GRID_H as u16;
 pub type Grid<const LEN: usize = {GRID_LEN as usize}> = [Cell; LEN];
 
 pub type CameraX = i16;
 pub type CameraY = i16;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct State {
     pub rng: Xs,
     pub camera_x: CameraX,
@@ -67,20 +67,23 @@ impl State {
         let mut debug: [u8; 16] = <_>::default();
         debug[2] = 2;
         debug[3] = 2;
-        let rng = xs::from_seed(seed);
+        debug[14] = 1;
+        let mut rng = xs::from_seed(seed);
 
         let mut grid = [Cell::default(); GRID_LEN as usize];
 
         for i in 0..grid.len() {
-            grid[i].cube_i = (2 + (i & 0b1)) as _;
-            grid[i].hz = (i & 0b11) as _;
+            let rolled = xs::range(&mut rng, 0..4);
+            grid[i].cube_i = (2 + (rolled & 0b1)) as _;
+            grid[i].hz = (rolled & 0b11) as _;
         }
 
         State {
             rng,
             debug,
             grid,
-            .. <_>::default()
+            camera_x: <_>::default(),
+            camera_y: <_>::default(),
         }
     }
 }
