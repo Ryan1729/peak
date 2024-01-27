@@ -273,7 +273,7 @@ fn render(commands: &mut Commands, state: &game::State) {
         let iso_y = grid_y + grid_x + cell.hz as i16 + state.camera_y;
 
         commands.sspr(
-            dbg!(game::CUBE_XYS[usize::from(cell.cube_i)]),
+            game::CUBE_XYS[usize::from(cell.cube_i)],
             unscaled::Rect {
                 x: BASE_X + unscaled::W(
                     iso_x * CUBE_W.0 / 2

@@ -112,9 +112,10 @@ impl State {
 
         let mut grid = [Cell::default(); GRID_LEN as usize];
 
+        let rolled = xs::range(&mut rng, 0..4);
         for i in 0..grid.len() {
-            let rolled = xs::range(&mut rng, 0..4);
-            grid[i].cube_i = (1 + (rolled & 0b11)) as _;
+            // let rolled = xs::range(&mut rng, 0..4);
+            grid[i].cube_i = (1 + (i & 0b11)) as _;
             grid[i].hz = (rolled & 0b11) as _;
         }
 
@@ -122,8 +123,8 @@ impl State {
             rng,
             debug,
             grid,
-            camera_x: <_>::default(),
-            camera_y: <_>::default(),
+            camera_x: 3,
+            camera_y: 1,
         }
     }
 }
