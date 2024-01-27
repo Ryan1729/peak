@@ -170,55 +170,138 @@ impl Iterator for LayerDrawIter<'_> {
     type Item = ((i16, i16), Cell);
 
     fn next(&mut self) -> Option<Self::Item> {
-        // Iterate in such a way that with a naive draw loop body
-        // things overlap correctly, with blocks filled in below other
-        // ones. That is, bottom, back corner then the three ones adjacent
-        // to that, then the next slice and so on.
-        // It turns out that to make that pattern, we can create all the
-        // coords with a given sum, least to greatest. Maintaining a square
-        // can be done by keeping the value of any one coord within the
-        // desired range. Probably relies on being based at the origin.
-        let x = self.x;
-        let y = self.y;
-
-        const MAX: u16 = if GRID_W > GRID_H {
-            GRID_W
-        } else {
-            GRID_H
-        } as u16;
-
-        if self.x >= MAX
-        && self.y >= MAX {
-            return None
-        }
-
         loop {
-            if self.x == 0 {
-                self.x = self.y + 1;
-                self.y = 0;
+            let mut output;
+
+            // Iterate in such a way that with a naive draw loop body
+            // things overlap correctly, with blocks filled in below other
+            // ones. That is, bottom, back corner then the three ones adjacent
+            // to that, then the next slice and so on.
+            // It turns out that to make that pattern, we can create all the
+            // coords with a given sum, least to greatest. Maintaining a square
+            // can be done by keeping the value of any one coord within the
+            // desired range. Probably relies on being based at the origin.
+            let x = self.x;
+            let y = self.y;
+
+            const MAX: u16 = if GRID_W > GRID_H {
+                GRID_W
             } else {
-                self.x -= 1;
-                self.y += 1;
-            }
+                GRID_H
+            } as u16;
 
             if self.x >= MAX
             && self.y >= MAX {
-                break
+                // Fallthrough to loop check
+                output = None;
+            } else {
+                loop {
+                    if self.x == 0 {
+                        self.x = self.y + 1;
+                        self.y = 0;
+                    } else {
+                        self.x -= 1;
+                        self.y += 1;
+                    }
+
+                    if self.x >= MAX
+                    && self.y >= MAX {
+                        break
+                    }
+
+                    if self.x >= MAX
+                    || self.y >= MAX {
+                        continue
+                    }
+
+                    break
+                }
+                let index = grid_xy_to_i((x, y));
+                output = self.grid.get(index)
+                    .cloned()
+                    .map(|cell| ((x as i16, y as i16), cell));
             }
 
-            if self.x >= MAX
-            || self.y >= MAX {
-                continue
+            if let Some(o) = output {
+                return Some(o)
+            } else if more_indexes_are_left(
+                (self.x, self.y),
+                self.grid.len().saturating_sub(1)
+            ) {
+                // try again
+            } else {
+                return None
             }
-
-            break
         }
-
-        let index = y * GRID_W as GridInner + x;
-        self.grid.get(usize::from(index))
-            .cloned()
-            .map(|cell| ((x as i16, y as i16), cell))
     }
+}
+
+fn grid_xy_to_i((x, y): (GridX, GridY)) -> usize {
+    usize::from(y * GRID_W as GridInner + x)
+}
+
+fn grid_i_to_xy(i: usize) -> (GridX, GridY) {
+    (i as GridX % GRID_W as GridX, i as GridY / GRID_W as GridY)
+}
+
+#[test]
+fn grid_xy_to_i_to_xy_is_identity_on_these_examples() {
+    assert!(GRID_W >= 3);
+    assert!(GRID_H >= 2);
+    assert_eq!(grid_i_to_xy(grid_xy_to_i((0, 0))), (0, 0));
+    assert_eq!(grid_i_to_xy(grid_xy_to_i((1, 0))), (1, 0));
+    assert_eq!(grid_i_to_xy(grid_xy_to_i((0, 2))), (0, 2));
+    assert_eq!(grid_i_to_xy(dbg!(grid_xy_to_i((2, 2)))), (2, 2));
+}
+
+#[test]
+fn grid_i_to_xy_to_i_is_identity_on_these_examples() {
+    assert_eq!(grid_xy_to_i(grid_i_to_xy(0)), 0);
+    assert_eq!(grid_xy_to_i(grid_i_to_xy(2)), 2);
+    assert_eq!(grid_xy_to_i(grid_i_to_xy(3 * GRID_W as usize)), 3 * GRID_W as usize);
+    assert_eq!(grid_xy_to_i(grid_i_to_xy(4 * GRID_W as usize + 4)), 4 * GRID_W as usize + 4);
+}
+
+fn more_indexes_are_left(
+    (x, y): (GridX, GridY),
+    max_index: usize
+) -> bool {
+    let sum = x + y;
+
+    let max_x = GridInner::from(GRID_W - 1);
+    let max_y = GridInner::from(GRID_H - 1);
+    let max_index_sum = max_x + max_y;
+
+    if sum > max_index_sum {
+        false
+    } else if sum == max_index_sum {
+        // For example, if the max xy is (2, 1) then we want (3, 0) to
+        // result in true, same with (2, 1), but (1, 2) to result in
+        // false.
+        // 0x0300 >= 0x0201: true
+        // 0x0201 >= 0x0201: true
+        // 0x0102 >= 0x0201: false
+        u32::from(x) << GridX::BITS
+        | u32::from(y)
+        >=
+        u32::from(max_x) << GridX::BITS
+        | u32::from(max_y)
+    } else {
+        true
+    }
+}
+
+#[test]
+fn more_indexes_are_left_works_on_these_examples() {
+    let len = 6;
+    assert_eq!(more_indexes_are_left((0, 0), len), true, "(0, 0)");
+    assert_eq!(more_indexes_are_left((1, 0), len), true, "(1, 0)");
+    assert_eq!(more_indexes_are_left((0, 1), len), true, "(0, 1)");
+    assert_eq!(more_indexes_are_left((1, 1), len), true, "(1, 1)");
+    assert_eq!(more_indexes_are_left((0, 2), len), true, "(0, 2)");
+    assert_eq!(more_indexes_are_left((3, 0), len), true, "(3, 0)");
+    assert_eq!(more_indexes_are_left((2, 1), len), true, "(2, 1)");
+    assert_eq!(more_indexes_are_left((1, 2), len), false);
 }
 
 #[test]
