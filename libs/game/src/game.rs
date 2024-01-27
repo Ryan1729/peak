@@ -85,8 +85,8 @@ impl core::fmt::Debug for Cell {
     }
 }
 
-pub const GRID_W: u8 = 3;//16;
-pub const GRID_H: u8 = 2;//16;
+pub const GRID_W: u8 = 16;
+pub const GRID_H: u8 = 16;
 pub const GRID_LEN: u16 = GRID_W as u16 * GRID_H as u16;
 pub type Grid<const LEN: usize = {GRID_LEN as usize}> = [Cell; LEN];
 
@@ -112,10 +112,9 @@ impl State {
 
         let mut grid = [Cell::default(); GRID_LEN as usize];
 
-        let rolled = xs::range(&mut rng, 0..4);
         for i in 0..grid.len() {
-            // let rolled = xs::range(&mut rng, 0..4);
-            grid[i].cube_i = (1 + (i & 0b11)) as _;
+            let rolled = xs::range(&mut rng, 0..4);
+            grid[i].cube_i = (1 + (rolled & 0b11)) as _;
             grid[i].hz = (rolled & 0b11) as _;
         }
 
