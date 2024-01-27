@@ -66,7 +66,7 @@ pub type HZ = u8;
 
 pub const HZ_BOTTOM: HZ = 16;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct Cell {
     pub hz: HZ,
     pub cube_i: CubeIndex,

@@ -151,13 +151,13 @@ type GridX = GridInner;
 type GridY = GridInner;
 
 struct LayerDrawIter<'grid> {
-    grid: &'grid Grid,
+    grid: &'grid [Cell],
     x: GridX,
     y: GridY,
 }
 
 impl <'grid> LayerDrawIter<'grid> {
-    fn of(grid: &'grid Grid) -> Self {
+    fn of(grid: &'grid [Cell]) -> Self {
         Self {
             grid,
             x: 0,
@@ -221,13 +221,52 @@ impl Iterator for LayerDrawIter<'_> {
     }
 }
 
+#[test]
+fn layer_draw_iter_works_on_these_examples() {
+    macro_rules! c {
+        ($i: literal) => {
+            Cell {
+                hz: <_>::default(),
+                cube_i: $i,
+            }
+        };
+        ($z: literal $(,)? $i: literal) => {
+            Cell {
+                hz: $z,
+                cube_i: $i,
+            }
+        };
+    }
+
+    let acutal = LayerDrawIter::of(&[
+        c!(1),
+        c!(2),
+        c!(3),
+        c!(4),
+        c!(1),
+        c!(2),
+    ]).collect::<Vec<_>>();
+
+    assert_eq!(
+        acutal,
+        &[
+            ((0, 0), c!(1)),
+            ((1, 0), c!(2)),
+            ((0, 1), c!(4)),
+            ((2, 0), c!(3)),
+            ((1, 1), c!(1)),
+            ((2, 1), c!(2)), // Wasn't seeing this one
+        ]
+    )
+}
+
 struct DrawIter<'grid> {
     layer_iter: std::iter::Peekable<LayerDrawIter<'grid>>,
     hz: game::HZ,
 }
 
 impl <'grid> DrawIter<'grid> {
-    fn of(grid: &'grid Grid) -> Self {
+    fn of(grid: &'grid [Cell]) -> Self {
         Self {
             layer_iter: LayerDrawIter::of(grid).peekable(),
             hz: HZ_BOTTOM,
