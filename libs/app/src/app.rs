@@ -363,12 +363,15 @@ impl Iterator for DrawIter<'_> {
     fn next(&mut self) -> Option<Self::Item> {
         // add more cells to fill below things
         if let Some(&((x, y), cell)) = self.layer_iter.peek() {
-            if self.hz == 0 || self.hz == cell.hz {
+            let hz = self.hz;
+
+            // Move up 2 so we don't get overlapping cubes
+            self.hz = self.hz.saturating_sub(2);
+
+            if hz <= cell.hz {
                 self.hz = HZ_BOTTOM;
                 self.layer_iter.next()
             } else {
-                let hz = self.hz;
-                self.hz = self.hz.saturating_sub(2);
                 Some(((x, y), Cell { hz, cube_i: 0 }))
             }
         } else {
@@ -416,11 +419,16 @@ fn render(commands: &mut Commands, state: &game::State) {
         6
     );
 
-    if state.grid.len() <= 16 {
+    let mut y = unscaled::Y(0);
+
+    const FITS_ON_SCREEN: usize = 6;
+    for grid_slice in state.grid.chunks(FITS_ON_SCREEN) {
+        y += unscaled::H(16);
+
         commands.print_line(
-            format!("{:?}", state.grid).as_bytes(),
+            format!("{grid_slice:?}").as_bytes(),
             unscaled::X(0),
-            unscaled::Y(16),
+            y,
             6
         );
     }
