@@ -6,7 +6,16 @@ use platform_types::{ARGB, Command, PALETTE, sprite, unscaled, command::{self, R
 pub struct Commands {
     commands: Vec<Command>,
 }
-
+// TODO add a way to represent the any one of 9 sections in a 3 by 3 grid
+// on each cube face and then allow drawing a given one of the 27 sections
+// at a time, so we can then have that framework for adding a
+// character/cursor thing.
+// Big question is how to do that, given we only allow rendering rectangles
+// now. Obviously could draw seveal skinny rects of different lengths, but
+// that seems inefficent. Another option would be only having a set of
+// sprites for the character with say 3 slots per cube to only use 9 cubes
+// for that? Maybe adding a set of mask sprites and defining using a mask
+// would be better?
 impl Commands {
     pub fn slice(&self) -> &[Command] {
         &self.commands
@@ -47,7 +56,7 @@ impl Commands {
 
     pub fn print_char(
         &mut self,
-        character: u8, 
+        character: u8,
         x: unscaled::X,
         y: unscaled::Y,
         colour: PaletteIndex
@@ -57,13 +66,13 @@ impl Commands {
             let sprite_number = Inner::from(sprite_number);
             const CH_SIZE: Inner = CHAR_SIZE as Inner;
             const SPRITES_PER_ROW: Inner = FONT_WIDTH as Inner / CH_SIZE;
-        
+
             sprite::XY {
                 x: sprite::X(
                     (sprite_number % SPRITES_PER_ROW) * CH_SIZE
                 ),
                 y: sprite::Y(
-                    FONT_BASE_Y as Inner + 
+                    FONT_BASE_Y as Inner +
                     (sprite_number / SPRITES_PER_ROW) * CH_SIZE
                 ),
             }
@@ -154,20 +163,20 @@ pub mod card {
     pub const LEFT_SUIT_EDGE_H: H = H(10);
 
     pub const RIGHT_RANK_EDGE_W: W = w_const_sub(
-        WIDTH, 
+        WIDTH,
         w_const_add(LEFT_RANK_EDGE_W, CHAR_W)
     );
     pub const RIGHT_RANK_EDGE_H: H = h_const_sub(
-        HEIGHT, 
+        HEIGHT,
         h_const_add(LEFT_RANK_EDGE_H, CHAR_H)
     );
 
     pub const RIGHT_SUIT_EDGE_W: W = w_const_sub(
-        WIDTH, 
+        WIDTH,
         w_const_add(LEFT_SUIT_EDGE_W, CHAR_W)
     );
     pub const RIGHT_SUIT_EDGE_H: H = h_const_sub(
-        HEIGHT, 
+        HEIGHT,
         h_const_add(LEFT_SUIT_EDGE_H, CHAR_H)
     );
 }
