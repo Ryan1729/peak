@@ -6,16 +6,7 @@ use platform_types::{ARGB, Command, PALETTE, sprite, unscaled, command::{self, R
 pub struct Commands {
     commands: Vec<Command>,
 }
-// TODO add a way to represent the any one of 9 sections in a 3 by 3 grid
-// on each cube face and then allow drawing a given one of the 27 sections
-// at a time, so we can then have that framework for adding a
-// character/cursor thing.
-// Big question is how to do that, given we only allow rendering rectangles
-// now. Obviously could draw seveal skinny rects of different lengths, but
-// that seems inefficent. Another option would be only having a set of
-// sprites for the character with say 3 slots per cube to only use 9 cubes
-// for that? Maybe adding a set of mask sprites and defining using a mask
-// would be better?
+
 impl Commands {
     pub fn slice(&self) -> &[Command] {
         &self.commands

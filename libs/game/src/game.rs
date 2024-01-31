@@ -15,6 +15,9 @@ pub const CUBE_H: unscaled::H = unscaled::H(128);
 const CUBE_BASE_X: sprite::X = sprite::X(128);
 const CUBE_X_ADV: sprite::W = sprite::W(112);
 
+const CUBE_BASE_Y: sprite::Y = sprite::Y(0);
+const CUBE_Y_ADV: sprite::H = sprite::H(128);
+
 macro_rules! compile_time_assert {
     ($assertion: expr) => {{
         #[allow(unknown_lints, eq_op)]
@@ -24,36 +27,122 @@ macro_rules! compile_time_assert {
 }
 
 pub const CUBE_XYS: [sprite::XY; 6] = {
-    use sprite::x_const_add_w as add;
+    use sprite::x_const_add_w as add_w;
+    use sprite::y_const_add_h as add_h;
 
     compile_time_assert!{
         sprite::x_const_add_w(CUBE_BASE_X, CUBE_X_ADV).0 < 32768
     }
 
+    const X0: sprite::X = CUBE_BASE_X;
+    const X1: sprite::X = add_w(X0, CUBE_X_ADV);
+    const X2: sprite::X = add_w(X1, CUBE_X_ADV);
+
+    const Y0: sprite::Y = CUBE_BASE_Y;
+    const Y1: sprite::Y = add_h(Y0, CUBE_Y_ADV);
+
+    compile_time_assert!{
+        Y0.0 < 32768
+    }
+    compile_time_assert!{
+        Y1.0 < 32768
+    }
+
     [
         sprite::XY {
-            x: CUBE_BASE_X,
-            y: sprite::Y(0),
+            x: X0,
+            y: Y0,
         },
         sprite::XY {
-            x: CUBE_BASE_X,
-            y: sprite::Y(128),
+            x: X1,
+            y: Y0,
         },
         sprite::XY {
-            x: add(CUBE_BASE_X, CUBE_X_ADV),
-            y: sprite::Y(0),
+            x: X2,
+            y: Y0,
         },
         sprite::XY {
-            x: add(CUBE_BASE_X, CUBE_X_ADV),
-            y: sprite::Y(128),
+            x: X0,
+            y: Y1,
         },
         sprite::XY {
-            x: add(add(CUBE_BASE_X, CUBE_X_ADV), CUBE_X_ADV),
-            y: sprite::Y(0),
+            x: X1,
+            y: Y1,
         },
         sprite::XY {
-            x: add(add(CUBE_BASE_X, CUBE_X_ADV), CUBE_X_ADV),
-            y: sprite::Y(128),
+            x: X2,
+            y: Y1,
+        },
+    ]
+};
+
+const PLAYER_BASE_X: sprite::X = sprite::X(128);
+const PLAYER_X_ADV: sprite::W = sprite::W(112);
+
+const PLAYER_BASE_Y: sprite::Y = sprite::Y(256);
+const PLAYER_Y_ADV: sprite::H = sprite::H(128);
+
+pub const PLAYER_XYS: [sprite::XY; 12] = {
+    use sprite::x_const_add_w as add_w;
+    use sprite::y_const_add_h as add_h;
+
+    const X0: sprite::X = PLAYER_BASE_X;
+    const X1: sprite::X = add_w(X0, PLAYER_X_ADV);
+    const X2: sprite::X = add_w(X1, PLAYER_X_ADV);
+
+    const Y0: sprite::Y = PLAYER_BASE_Y;
+    const Y1: sprite::Y = add_h(Y0, PLAYER_Y_ADV);
+    const Y2: sprite::Y = add_h(Y1, PLAYER_Y_ADV);
+    const Y3: sprite::Y = add_h(Y2, PLAYER_Y_ADV);
+
+    [
+        sprite::XY {
+            x: X0,
+            y: Y0,
+        },
+        sprite::XY {
+            x: X1,
+            y: Y0,
+        },
+        sprite::XY {
+            x: X2,
+            y: Y0,
+        },
+        sprite::XY {
+            x: X0,
+            y: Y1,
+        },
+        sprite::XY {
+            x: X1,
+            y: Y1,
+        },
+        sprite::XY {
+            x: X2,
+            y: Y1,
+        },
+        sprite::XY {
+            x: X0,
+            y: Y2,
+        },
+        sprite::XY {
+            x: X1,
+            y: Y2,
+        },
+        sprite::XY {
+            x: X2,
+            y: Y2,
+        },
+        sprite::XY {
+            x: X0,
+            y: Y3,
+        },
+        sprite::XY {
+            x: X1,
+            y: Y3,
+        },
+        sprite::XY {
+            x: X2,
+            y: Y3,
         },
     ]
 };

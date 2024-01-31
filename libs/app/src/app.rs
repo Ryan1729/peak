@@ -410,6 +410,22 @@ fn render(commands: &mut Commands, state: &game::State) {
                 h: CUBE_H,
             }
         );
+
+        commands.sspr(
+            game::PLAYER_XYS[
+                usize::from(z1.abs() as u16) % game::PLAYER_XYS.len()
+            ],
+            unscaled::Rect {
+                x: BASE_X + unscaled::W(
+                    iso_x * CUBE_W.0 / 2
+                ),
+                y: BASE_Y + unscaled::H(
+                    iso_y * CUBE_H.0 / 4
+                ),
+                w: CUBE_W,
+                h: CUBE_H,
+            }
+        );
     }
 
     commands.print_line(

@@ -532,7 +532,7 @@ pub mod unscaled {
 }
 
 pub const GFX_WIDTH: usize = 512;
-pub const GFX_HEIGHT: usize = 256;
+pub const GFX_HEIGHT: usize = 1024;
 pub const GFX_LENGTH: usize = GFX_WIDTH * GFX_HEIGHT;
 
 pub const FONT_BASE_Y: u8 = 128;
@@ -613,8 +613,8 @@ pub mod sprite {
     pub const fn y_const_add_h(y: Y, h: H) -> Y {
         Y(
             y.0.saturating_add(
-                if h.0 > (Inner::MAX as LengthInner) {
-                    Inner::MAX
+                if h.0 > LengthInner::MAX {
+                    LengthInner::MAX as Inner
                 } else {
                     h.0 as Inner
                 }
