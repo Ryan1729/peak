@@ -2,13 +2,6 @@ use models::{Card, gen_card};
 use platform_types::{sprite, unscaled};
 use xs::{Xs, Seed};
 
-#[derive(Clone, Default)]
-pub struct Splat {
-    pub kind: Card,
-    pub x: unscaled::X,
-    pub y: unscaled::Y,
-}
-
 pub const CUBE_W: unscaled::W = unscaled::W(111);
 pub const CUBE_H: unscaled::H = unscaled::H(128);
 
@@ -182,13 +175,86 @@ pub type Grid<const LEN: usize = {GRID_LEN as usize}> = [Cell; LEN];
 pub type CameraX = i16;
 pub type CameraY = i16;
 
+pub type PlayerX = i16;
+pub type PlayerY = i16;
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Default)]
+pub enum SubFace {
+    #[default]
+    LeftBottom,
+    LeftMiddle,
+    LeftTop,
+    RightBottom,
+    RightMiddle,
+    RightTop,
+    /// The top slash like this `/`
+    TopSlashBottom,
+    TopSlashMiddle,
+    TopSlashTop,
+    /// The top slash like this `\`
+    TopBackslashBottom,
+    TopBackslashMiddle,
+    TopBackslashTop,
+}
+
+impl SubFace {
+    pub fn sprite_xy(self) -> sprite::XY {
+        PLAYER_XYS[self as u8 as usize]
+    }
+
+    pub fn wrapping_add_1(self) -> Self {
+        use SubFace::*;
+        match self {
+            LeftBottom => LeftMiddle,
+            LeftMiddle => LeftTop,
+            LeftTop => RightBottom,
+            RightBottom => RightMiddle,
+            RightMiddle => RightTop,
+            RightTop => TopSlashBottom,
+            TopSlashBottom => TopSlashMiddle,
+            TopSlashMiddle => TopSlashTop,
+            TopSlashTop => TopBackslashBottom,
+            TopBackslashBottom => TopBackslashMiddle,
+            TopBackslashMiddle => TopBackslashTop,
+            TopBackslashTop => LeftBottom,
+        }
+    }
+
+    pub fn wrapping_sub_1(self) -> Self {
+        use SubFace::*;
+        match self {
+            LeftBottom => TopBackslashTop,
+            LeftMiddle => LeftBottom,
+            LeftTop => LeftMiddle,
+            RightBottom => LeftTop,
+            RightMiddle => RightBottom,
+            RightTop => RightMiddle,
+            TopSlashBottom => RightTop,
+            TopSlashMiddle => TopSlashBottom,
+            TopSlashTop => TopSlashMiddle,
+            TopBackslashBottom => TopSlashTop,
+            TopBackslashMiddle => TopBackslashBottom,
+            TopBackslashTop => TopBackslashMiddle,
+        }
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct Player {
+    pub x: PlayerX,
+    pub y: PlayerY,
+    pub sub_face: SubFace,
+}
+
 #[derive(Clone)]
 pub struct State {
     pub rng: Xs,
     pub camera_x: CameraX,
     pub camera_y: CameraY,
-    pub debug: [u8; 16],
     pub grid: Grid,
+    pub player: Player,
+    pub debug: [u8; 16],
 }
 
 impl State {
@@ -213,6 +279,7 @@ impl State {
             grid,
             camera_x: 3,
             camera_y: 1,
+            player: <_>::default(),
         }
     }
 }

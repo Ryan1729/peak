@@ -87,6 +87,29 @@ fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
     }
 
     match state.debug[DEBUG_MODE] {
+        2 => {
+            match pressed {
+                Some(Button::A) => {
+                    state.player.sub_face = state.player.sub_face.wrapping_sub_1();
+                }
+                Some(Button::B) => {
+                    state.player.sub_face = state.player.sub_face.wrapping_add_1();
+                }
+                Some(Button::UP) => {
+                    state.player.y = state.player.y.wrapping_sub(1);
+                }
+                Some(Button::DOWN) => {
+                    state.player.y = state.player.y.wrapping_add(1);
+                }
+                Some(Button::LEFT) => {
+                    state.player.x = state.player.x.wrapping_sub(1);
+                }
+                Some(Button::RIGHT) => {
+                    state.player.x = state.player.x.wrapping_add(1);
+                }
+                None | _ => {}
+            }
+        }
         1 => {
             match pressed {
                 Some(Button::UP) => {
@@ -410,23 +433,21 @@ fn render(commands: &mut Commands, state: &game::State) {
                 h: CUBE_H,
             }
         );
-
-        commands.sspr(
-            game::PLAYER_XYS[
-                usize::from(z1.abs() as u16) % game::PLAYER_XYS.len()
-            ],
-            unscaled::Rect {
-                x: BASE_X + unscaled::W(
-                    iso_x * CUBE_W.0 / 2
-                ),
-                y: BASE_Y + unscaled::H(
-                    iso_y * CUBE_H.0 / 4
-                ),
-                w: CUBE_W,
-                h: CUBE_H,
-            }
-        );
     }
+
+    commands.sspr(
+        state.player.sub_face.sprite_xy(),
+        unscaled::Rect {
+            x: BASE_X + unscaled::W(
+                (state.player.x + state.camera_x) * CUBE_W.0 / 2
+            ),
+            y: BASE_Y + unscaled::H(
+                (state.player.y + state.camera_y) * CUBE_H.0 / 4
+            ),
+            w: CUBE_W,
+            h: CUBE_H,
+        }
+    );
 
     commands.print_line(
         format!("{:?}", state.debug).as_bytes(),
