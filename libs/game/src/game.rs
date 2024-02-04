@@ -175,8 +175,110 @@ pub type Grid<const LEN: usize = {GRID_LEN as usize}> = [Cell; LEN];
 pub type CameraX = i16;
 pub type CameraY = i16;
 
-pub type PlayerX = i16;
-pub type PlayerY = i16;
+pub type GridInner = u8;
+pub type GridXInner = GridInner;
+pub type GridYInner = GridInner;
+
+const GRID_X_MIN: GridXInner = 0;
+const GRID_X_MAX: GridXInner = GRID_W - 1;
+const GRID_Y_MIN: GridYInner = 0;
+const GRID_Y_MAX: GridYInner = GRID_W - 1;
+
+#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct GridX(GridXInner);
+
+impl GridX {
+    pub const MIN: Self = Self(GRID_X_MIN);
+    pub const MAX: Self = Self(GRID_X_MAX);
+
+    pub fn clamped(inner: GridXInner) -> Self {
+        Self(
+            if inner <= Self::MIN.0 {
+                Self::MIN.0
+            } else if inner >= Self::MAX.0 {
+                Self::MAX.0
+            } else {
+                inner
+            }
+        )
+    }
+
+    pub fn saturating_sub(self, inner: GridXInner) -> Self {
+        Self::clamped(self.0.saturating_sub(inner))
+    }
+
+    pub fn saturating_add(self, inner: GridXInner) -> Self {
+        Self::clamped(self.0.saturating_add(inner))
+    }
+
+    pub fn get(self) -> GridXInner {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct GridY(GridYInner);
+
+impl GridY {
+    pub const MIN: Self = Self(GRID_Y_MIN);
+    pub const MAX: Self = Self(GRID_Y_MAX);
+
+    pub fn clamped(inner: GridYInner) -> Self {
+        Self(
+            if inner <= Self::MIN.0 {
+                Self::MIN.0
+            } else if inner >= Self::MAX.0 {
+                Self::MAX.0
+            } else {
+                inner
+            }
+        )
+    }
+
+    pub fn saturating_sub(self, inner: GridYInner) -> Self {
+        Self::clamped(self.0.saturating_sub(inner))
+    }
+
+    pub fn saturating_add(self, inner: GridYInner) -> Self {
+        Self::clamped(self.0.saturating_add(inner))
+    }
+
+    pub fn get(self) -> GridYInner {
+        self.0
+    }
+}
+
+pub fn grid_xy_to_i((x, y): (GridX, GridY)) -> usize {
+    usize::from(y.get() * GRID_W as GridInner + x.get())
+}
+
+pub fn grid_i_to_xy(i: usize) -> (GridXInner, GridYInner) {
+    (
+        i as GridXInner % GRID_W as GridXInner,
+        i as GridYInner / GRID_W as GridYInner
+    )
+}
+
+#[test]
+fn grid_xy_to_i_to_xy_is_identity_on_these_examples() {
+    assert!(GRID_W >= 3);
+    assert!(GRID_H >= 2);
+    assert_eq!(grid_i_to_xy(grid_xy_to_i((0, 0))), (0, 0));
+    assert_eq!(grid_i_to_xy(grid_xy_to_i((1, 0))), (1, 0));
+    assert_eq!(grid_i_to_xy(grid_xy_to_i((0, 2))), (0, 2));
+    assert_eq!(grid_i_to_xy(dbg!(grid_xy_to_i((2, 2)))), (2, 2));
+}
+
+#[test]
+fn grid_i_to_xy_to_i_is_identity_on_these_examples() {
+    assert_eq!(grid_xy_to_i(grid_i_to_xy(0)), 0);
+    assert_eq!(grid_xy_to_i(grid_i_to_xy(2)), 2);
+    assert_eq!(grid_xy_to_i(grid_i_to_xy(3 * GRID_W as usize)), 3 * GRID_W as usize);
+    assert_eq!(grid_xy_to_i(grid_i_to_xy(4 * GRID_W as usize + 4)), 4 * GRID_W as usize + 4);
+}
+
+pub type PlayerX = GridX;
+pub type PlayerY = GridY;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Default)]
@@ -281,5 +383,9 @@ impl State {
             camera_y: 1,
             player: <_>::default(),
         }
+    }
+
+    pub fn player_cell(&self) -> Cell {
+        self.grid[grid_xy_to_i((self.player.x, self.player.y))]
     }
 }

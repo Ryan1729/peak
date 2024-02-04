@@ -1,4 +1,4 @@
-use game::{CUBE_H, CUBE_W, GRID_W, GRID_H, HZ, HZ_BOTTOM, Cell, Grid};
+use game::{CUBE_H, CUBE_W, GRID_W, GRID_H, HZ, HZ_BOTTOM, CameraX, CameraY, Cell, Grid, GridX, GridY, grid_xy_to_i, GridInner, GridXInner, GridYInner};
 use gfx::{Commands};
 use platform_types::{command, sprite, unscaled, Button, Input, Speaker, SFX};
 pub use platform_types::StateParams;
@@ -96,16 +96,16 @@ fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
                     state.player.sub_face = state.player.sub_face.wrapping_add_1();
                 }
                 Some(Button::UP) => {
-                    state.player.y = state.player.y.wrapping_sub(1);
+                    state.player.y = state.player.y.saturating_sub(1);
                 }
                 Some(Button::DOWN) => {
-                    state.player.y = state.player.y.wrapping_add(1);
+                    state.player.y = state.player.y.saturating_add(1);
                 }
                 Some(Button::LEFT) => {
-                    state.player.x = state.player.x.wrapping_sub(1);
+                    state.player.x = state.player.x.saturating_add(1);
                 }
                 Some(Button::RIGHT) => {
-                    state.player.x = state.player.x.wrapping_add(1);
+                    state.player.x = state.player.x.saturating_sub(1);
                 }
                 None | _ => {}
             }
@@ -169,28 +169,24 @@ fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
     }
 }
 
-type GridInner = u16;
-type GridX = GridInner;
-type GridY = GridInner;
-
 struct LayerDrawIter<'grid> {
     grid: &'grid [Cell],
-    x: GridX,
-    y: GridY,
+    x: GridXInner,
+    y: GridYInner,
 }
 
 impl <'grid> LayerDrawIter<'grid> {
     fn of(grid: &'grid [Cell]) -> Self {
         Self {
             grid,
-            x: 0,
-            y: 0,
+            x: <_>::default(),
+            y: <_>::default(),
         }
     }
 }
 
 impl Iterator for LayerDrawIter<'_> {
-    type Item = ((i16, i16), Cell);
+    type Item = ((GridX, GridY), Cell);
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -207,11 +203,11 @@ impl Iterator for LayerDrawIter<'_> {
             let x = self.x;
             let y = self.y;
 
-            const MAX: u16 = if GRID_W > GRID_H {
+            const MAX: GridInner = if GRID_W > GRID_H {
                 GRID_W
             } else {
                 GRID_H
-            } as u16;
+            };
 
             if self.x >= MAX
             && self.y >= MAX {
@@ -219,12 +215,12 @@ impl Iterator for LayerDrawIter<'_> {
                 output = None;
             } else {
                 loop {
-                    if self.x == 0 {
-                        self.x = self.y + 1;
-                        self.y = 0;
+                    if self.x == GridX::MIN.get() {
+                        self.x = self.y.saturating_add(1);
+                        self.y = GridY::MIN.get();
                     } else {
-                        self.x -= 1;
-                        self.y += 1;
+                        self.x = self.x.saturating_sub(1);
+                        self.y = self.y.saturating_add(1);
                     }
 
                     if self.x >= MAX
@@ -239,10 +235,13 @@ impl Iterator for LayerDrawIter<'_> {
 
                     break
                 }
-                let index = grid_xy_to_i((x, y));
+
+                let xy = (GridX::clamped(x), GridY::clamped(y));
+
+                let index = grid_xy_to_i(xy);
                 output = self.grid.get(index)
                     .cloned()
-                    .map(|cell| ((x as i16, y as i16), cell));
+                    .map(|cell| (xy, cell));
             }
 
             if let Some(o) = output {
@@ -259,40 +258,14 @@ impl Iterator for LayerDrawIter<'_> {
     }
 }
 
-fn grid_xy_to_i((x, y): (GridX, GridY)) -> usize {
-    usize::from(y * GRID_W as GridInner + x)
-}
-
-fn grid_i_to_xy(i: usize) -> (GridX, GridY) {
-    (i as GridX % GRID_W as GridX, i as GridY / GRID_W as GridY)
-}
-
-#[test]
-fn grid_xy_to_i_to_xy_is_identity_on_these_examples() {
-    assert!(GRID_W >= 3);
-    assert!(GRID_H >= 2);
-    assert_eq!(grid_i_to_xy(grid_xy_to_i((0, 0))), (0, 0));
-    assert_eq!(grid_i_to_xy(grid_xy_to_i((1, 0))), (1, 0));
-    assert_eq!(grid_i_to_xy(grid_xy_to_i((0, 2))), (0, 2));
-    assert_eq!(grid_i_to_xy(dbg!(grid_xy_to_i((2, 2)))), (2, 2));
-}
-
-#[test]
-fn grid_i_to_xy_to_i_is_identity_on_these_examples() {
-    assert_eq!(grid_xy_to_i(grid_i_to_xy(0)), 0);
-    assert_eq!(grid_xy_to_i(grid_i_to_xy(2)), 2);
-    assert_eq!(grid_xy_to_i(grid_i_to_xy(3 * GRID_W as usize)), 3 * GRID_W as usize);
-    assert_eq!(grid_xy_to_i(grid_i_to_xy(4 * GRID_W as usize + 4)), 4 * GRID_W as usize + 4);
-}
-
 fn more_indexes_are_left(
-    (x, y): (GridX, GridY),
+    (x, y): (GridXInner, GridYInner),
     max_index: usize
 ) -> bool {
     let sum = x + y;
 
-    let max_x = GridInner::from(GRID_W - 1);
-    let max_y = GridInner::from(GRID_H - 1);
+    let max_x = GridXInner::from(GRID_W - 1);
+    let max_y = GridYInner::from(GRID_H - 1);
     let max_index_sum = max_x + max_y;
 
     if sum > max_index_sum {
@@ -304,10 +277,10 @@ fn more_indexes_are_left(
         // 0x0300 >= 0x0201: true
         // 0x0201 >= 0x0201: true
         // 0x0102 >= 0x0201: false
-        u32::from(x) << GridX::BITS
+        u32::from(x) << GridXInner::BITS
         | u32::from(y)
         >=
-        u32::from(max_x) << GridX::BITS
+        u32::from(max_x) << GridXInner::BITS
         | u32::from(max_y)
     } else {
         true
@@ -381,7 +354,7 @@ impl <'grid> DrawIter<'grid> {
 }
 
 impl Iterator for DrawIter<'_> {
-    type Item = ((i16, i16), Cell);
+    type Item = ((GridX, GridY), Cell);
 
     fn next(&mut self) -> Option<Self::Item> {
         // add more cells to fill below things
@@ -416,9 +389,23 @@ fn render(commands: &mut Commands, state: &game::State) {
     let z1: i16 = state.debug[DEBUG_Z1] as i8 as _;
     let z2: i16 = state.debug[DEBUG_Z2] as i8 as _;
 
+    fn to_iso(
+        (grid_x, grid_y): (GridX, GridY),
+        cell: Cell,
+        (camera_x, camera_y): (CameraX, CameraY)
+    ) -> (CameraX, CameraY) {
+        (
+            grid_y.get() as CameraX - grid_x.get() as CameraX + camera_x,
+            grid_y.get() as CameraY + grid_x.get() as CameraY + cell.hz as CameraY + camera_y,
+        )
+    }
+
     for ((grid_x, grid_y), cell) in DrawIter::of(&state.grid) {
-        let iso_x = grid_y - grid_x + state.camera_x;
-        let iso_y = grid_y + grid_x + cell.hz as i16 + state.camera_y;
+        let (iso_x, iso_y) = to_iso(
+            (grid_x, grid_y),
+            cell,
+            (state.camera_x, state.camera_y)
+        );
 
         commands.sspr(
             game::CUBE_XYS[usize::from(cell.cube_i)],
@@ -435,19 +422,27 @@ fn render(commands: &mut Commands, state: &game::State) {
         );
     }
 
-    commands.sspr(
-        state.player.sub_face.sprite_xy(),
-        unscaled::Rect {
-            x: BASE_X + unscaled::W(
-                (state.player.x + state.camera_x) * CUBE_W.0 / 2
-            ),
-            y: BASE_Y + unscaled::H(
-                (state.player.y + state.camera_y) * CUBE_H.0 / 4
-            ),
-            w: CUBE_W,
-            h: CUBE_H,
-        }
-    );
+    {
+        let (iso_x, iso_y) = to_iso(
+            (state.player.x, state.player.y),
+            state.player_cell(),
+            (state.camera_x, state.camera_y)
+        );
+    
+        commands.sspr(
+            state.player.sub_face.sprite_xy(),
+            unscaled::Rect {
+                x: BASE_X + unscaled::W(
+                    iso_x * CUBE_W.0 / 2
+                ),
+                y: BASE_Y + unscaled::H(
+                    iso_y * CUBE_H.0 / 4
+                ),
+                w: CUBE_W,
+                h: CUBE_H,
+            }
+        );
+    }
 
     commands.print_line(
         format!("{:?}", state.debug).as_bytes(),
