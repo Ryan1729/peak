@@ -249,7 +249,11 @@ impl GridY {
 }
 
 pub fn grid_xy_to_i((x, y): (GridX, GridY)) -> usize {
-    usize::from(y.get() * GRID_W as GridInner + x.get())
+    grid_xy_inner_to_i((x.get(), y.get()))
+}
+
+pub fn grid_xy_inner_to_i((x, y): (GridXInner, GridYInner)) -> usize {
+    y as usize * GRID_W as usize + x as usize
 }
 
 pub fn grid_i_to_xy(i: usize) -> (GridXInner, GridYInner) {
@@ -369,10 +373,34 @@ impl State {
 
         let mut grid = [Cell::default(); GRID_LEN as usize];
 
-        for i in 0..grid.len() {
-            let rolled = xs::range(&mut rng, 0..4);
-            grid[i].cube_i = (1 + (rolled & 0b11)) as _;
-            grid[i].hz = (rolled & 0b11) as _;
+        let mut x = GridX::MIN.get();
+        let mut y = GridY::MIN.get();
+        let mut i = grid_xy_inner_to_i((x, y));
+        let mut hz = 1;
+
+
+        while i < grid.len() {
+            if let Some(cell) = grid.get_mut(i) {
+                // Assert that we haven't already set this cell
+                assert_eq!(cell.hz, 0);
+
+                cell.hz = hz;
+
+                let rolled = xs::range(&mut rng, 0..4);
+                cell.cube_i = (1 + (rolled & 0b11)) as _;
+            }
+
+            hz += 1;
+
+            if x == GridX::MIN.get() {
+                x = y.saturating_add(1);
+                y = GridY::MIN.get();
+            } else {
+                x = x.saturating_sub(1);
+                y = y.saturating_add(1);
+            }
+
+            i = grid_xy_inner_to_i((x, y));
         }
 
         State {
