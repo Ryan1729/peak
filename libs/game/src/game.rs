@@ -146,7 +146,7 @@ pub type CubeIndex = u8;
 /// Half Z
 pub type HZ = u8;
 
-pub const HZ_BOTTOM: HZ = 16;
+pub const HZ_BOTTOM: HZ = 32;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct Cell {
@@ -270,7 +270,7 @@ fn grid_xy_to_i_to_xy_is_identity_on_these_examples() {
     assert_eq!(grid_i_to_xy(grid_xy_to_i((0, 0))), (0, 0));
     assert_eq!(grid_i_to_xy(grid_xy_to_i((1, 0))), (1, 0));
     assert_eq!(grid_i_to_xy(grid_xy_to_i((0, 2))), (0, 2));
-    assert_eq!(grid_i_to_xy(dbg!(grid_xy_to_i((2, 2)))), (2, 2));
+    assert_eq!(grid_i_to_xy(grid_xy_to_i((2, 2))), (2, 2));
 }
 
 #[test]
@@ -378,19 +378,20 @@ impl State {
         let mut i = grid_xy_inner_to_i((x, y));
         let mut hz = 1;
 
+        macro_rules! break_cond {
+            () => { i < grid.len() }
+        }
 
-        while i < grid.len() {
+        while break_cond!() {
             if let Some(cell) = grid.get_mut(i) {
                 // Assert that we haven't already set this cell
-                assert_eq!(cell.hz, 0);
+                assert_eq!(cell.hz, 0, "{:?}", (x, y));
 
                 cell.hz = hz;
 
                 let rolled = xs::range(&mut rng, 0..4);
                 cell.cube_i = (1 + (rolled & 0b11)) as _;
             }
-
-            hz += 1;
 
             if x == GridX::MIN.get() {
                 x = y.saturating_add(1);
@@ -401,6 +402,24 @@ impl State {
             }
 
             i = grid_xy_inner_to_i((x, y));
+
+            if x >= GridX::MAX.get()
+            || y >= GridY::MAX.get()  {
+                if break_cond!() {
+                    break
+                } else {
+                    continue
+                }
+            }
+
+            hz += 1;
+        }
+
+        // Probably only useful for debugging
+        for cell in grid.iter_mut() {
+            if cell.hz == 0 {
+                cell.hz = HZ_BOTTOM;
+            }
         }
 
         State {
