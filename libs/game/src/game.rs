@@ -382,15 +382,6 @@ impl State {
             () => { i < grid.len() }
         }
 
-        enum GenMode {
-            Switchback,
-            // TODO add z per diagonal mode
-            // DiagonalPlateaus,
-        }
-        use GenMode::*;
-
-        let mode = Switchback;
-
         #[derive(Clone, Copy, Debug)]
         enum DiagonalOrder {
             Forward,
@@ -398,7 +389,14 @@ impl State {
         }
         use DiagonalOrder::*;
 
-        let mut order = Forward;
+        enum GenMode {
+            Switchback(DiagonalOrder),
+            DiagonalPlateaus,
+        }
+        use GenMode::*;
+
+        //let mut mode = Switchback(Forward);
+        let mut mode = DiagonalPlateaus;
 
         while break_cond!() {
             if let Some(cell) = grid.get_mut(i) {
@@ -411,10 +409,10 @@ impl State {
                 cell.cube_i = (1 + (rolled & 0b11)) as _;
             }
 
-            match order {
-                Forward => {
+            match mode {
+                Switchback(Forward) => {
                     if x == GridX::MIN.get() {
-                        order = Reverse;
+                        mode = Switchback(Reverse);
 
                         // setup for reverse
                         x = GridX::MIN.get();
@@ -424,9 +422,9 @@ impl State {
                         y = y.saturating_add(1);
                     }
                 }
-                Reverse => {
+                Switchback(Reverse) => {
                     if y == GridY::MIN.get() {
-                        order = Forward;
+                        mode = Switchback(Forward);
 
                         // setup for forward
                         x = x.saturating_add(1);
@@ -434,6 +432,16 @@ impl State {
                     } else {
                         x = x.saturating_add(1);
                         y = y.saturating_sub(1);
+                    }
+                }
+                DiagonalPlateaus => {
+                    // Each diagonal, forward
+                    if x == GridX::MIN.get() {
+                        x = y.saturating_add(1);
+                        y = GridY::MIN.get();
+                    } else {
+                        x = x.saturating_sub(1);
+                        y = y.saturating_add(1);
                     }
                 }
             }
@@ -448,7 +456,17 @@ impl State {
                 }
             }
 
-            hz += 1;
+            match mode {
+                Switchback(_) => {
+                    hz += 1;
+                }
+                DiagonalPlateaus => {
+                    // If we just reached a new layer
+                    if y == GridY::MIN.get() {
+                        hz += 1;
+                    }
+                }
+            }
         }
 
         // Probably only useful for debugging
