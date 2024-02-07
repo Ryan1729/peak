@@ -382,6 +382,24 @@ impl State {
             () => { i < grid.len() }
         }
 
+        enum GenMode {
+            Switchback,
+            // TODO add z per diagonal mode
+            // DiagonalPlateaus,
+        }
+        use GenMode::*;
+
+        let mode = Switchback;
+
+        #[derive(Clone, Copy, Debug)]
+        enum DiagonalOrder {
+            Forward,
+            Reverse
+        }
+        use DiagonalOrder::*;
+
+        let mut order = Forward;
+
         while break_cond!() {
             if let Some(cell) = grid.get_mut(i) {
                 // Assert that we haven't already set this cell
@@ -393,14 +411,32 @@ impl State {
                 cell.cube_i = (1 + (rolled & 0b11)) as _;
             }
 
-            if x == GridX::MIN.get() {
-                x = y.saturating_add(1);
-                y = GridY::MIN.get();
-            } else {
-                x = x.saturating_sub(1);
-                y = y.saturating_add(1);
-            }
+            match order {
+                Forward => {
+                    if x == GridX::MIN.get() {
+                        order = Reverse;
 
+                        // setup for reverse
+                        x = GridX::MIN.get();
+                        y = y.saturating_add(1);
+                    } else {
+                        x = x.saturating_sub(1);
+                        y = y.saturating_add(1);
+                    }
+                }
+                Reverse => {
+                    if y == GridY::MIN.get() {
+                        order = Forward;
+
+                        // setup for forward
+                        x = x.saturating_add(1);
+                        y = GridY::MIN.get();
+                    } else {
+                        x = x.saturating_add(1);
+                        y = y.saturating_sub(1);
+                    }
+                }
+            }
             i = grid_xy_inner_to_i((x, y));
 
             if x >= GridX::MAX.get()
