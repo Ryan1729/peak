@@ -353,6 +353,13 @@ pub struct Player {
     pub sub_face: SubFace,
 }
 
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum MoveMode {
+    #[default]
+    A,
+    B,
+}
+
 #[derive(Clone)]
 pub struct State {
     pub rng: Xs,
@@ -360,6 +367,7 @@ pub struct State {
     pub camera_y: CameraY,
     pub grid: Grid,
     pub player: Player,
+    pub move_mode: MoveMode,
     pub debug: [u8; 16],
 }
 
@@ -395,7 +403,11 @@ impl State {
         }
         use GenMode::*;
 
+        // TODO? experiment with switching modes during generation.
+        // TODO randomize starting mode
+
         //let mut mode = Switchback(Forward);
+        // TODO get filling out the entire grid working
         let mut mode = DiagonalPlateaus;
 
         while break_cond!() {
@@ -483,6 +495,7 @@ impl State {
             camera_x: 3,
             camera_y: 1,
             player: <_>::default(),
+            move_mode: <_>::default(),
         }
     }
 

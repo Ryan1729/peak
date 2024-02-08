@@ -1,4 +1,4 @@
-use game::{CUBE_H, CUBE_W, GRID_W, GRID_H, HZ, HZ_BOTTOM, CameraX, CameraY, Cell, Grid, GridX, GridY, grid_xy_to_i, GridInner, GridXInner, GridYInner};
+use game::{CUBE_H, CUBE_W, GRID_W, GRID_H, HZ, HZ_BOTTOM, CameraX, CameraY, Cell, Grid, GridX, GridY, grid_xy_to_i, GridInner, GridXInner, GridYInner, MoveMode};
 use gfx::{Commands};
 use platform_types::{command, sprite, unscaled, Button, Input, Speaker, SFX};
 pub use platform_types::StateParams;
@@ -88,6 +88,7 @@ fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
 
     match state.debug[DEBUG_MODE] {
         2 => {
+            let move_mode = state.move_mode;
             match pressed {
                 Some(Button::A) => {
                     state.player.sub_face = state.player.sub_face.wrapping_sub_1();
@@ -95,17 +96,29 @@ fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
                 Some(Button::B) => {
                     state.player.sub_face = state.player.sub_face.wrapping_add_1();
                 }
-                Some(Button::UP) => {
+                Some(Button::UP) if move_mode == MoveMode::B => {
                     state.player.y = state.player.y.saturating_sub(1);
                 }
-                Some(Button::DOWN) => {
+                Some(Button::DOWN) if move_mode == MoveMode::B => {
                     state.player.y = state.player.y.saturating_add(1);
                 }
-                Some(Button::LEFT) => {
+                Some(Button::LEFT) if move_mode == MoveMode::B => {
                     state.player.x = state.player.x.saturating_add(1);
                 }
-                Some(Button::RIGHT) => {
+                Some(Button::RIGHT) if move_mode == MoveMode::B => {
                     state.player.x = state.player.x.saturating_sub(1);
+                }
+                Some(Button::UP) if move_mode == MoveMode::A => {
+                    state.player.x = state.player.x.saturating_sub(1);
+                }
+                Some(Button::DOWN) if move_mode == MoveMode::A => {
+                    state.player.x = state.player.x.saturating_add(1);
+                }
+                Some(Button::LEFT) if move_mode == MoveMode::A => {
+                    state.player.y = state.player.y.saturating_sub(1);
+                }
+                Some(Button::RIGHT) if move_mode == MoveMode::A => {
+                    state.player.y = state.player.y.saturating_add(1);
                 }
                 None | _ => {}
             }
