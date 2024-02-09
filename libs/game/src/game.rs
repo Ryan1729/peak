@@ -386,10 +386,6 @@ impl State {
         let mut i = grid_xy_inner_to_i((x, y));
         let mut hz = 1;
 
-        macro_rules! break_cond {
-            () => { i < grid.len() }
-        }
-
         #[derive(Clone, Copy, Debug)]
         enum DiagonalOrder {
             Forward,
@@ -406,19 +402,37 @@ impl State {
         // TODO? experiment with switching modes during generation.
         // TODO randomize starting mode
 
-        //let mut mode = Switchback(Forward);
-        // TODO get filling out the entire grid working
-        let mut mode = DiagonalPlateaus;
+        let mut mode = Switchback(Forward);
+        //let mut mode = DiagonalPlateaus;
 
-        while break_cond!() {
-            if let Some(cell) = grid.get_mut(i) {
-                // Assert that we haven't already set this cell
-                assert_eq!(cell.hz, 0, "{:?}", (x, y));
+        macro_rules! continue_cond {
+            () => {
+                i < grid.len()
+                // If only one of them is past the MAX then we might be
+                // within the parts that overhang the edges of the grid
+                || (
+                    x > GridX::MAX.get()
+                    && y <= GridY::MAX.get()
+                )
+                || (
+                    x <= GridX::MAX.get()
+                    && y > GridY::MAX.get()
+                )
+            }
+        }
 
-                cell.hz = hz;
+        while continue_cond!() {
+            if x <= GridX::MAX.get()
+            && y <= GridY::MAX.get() {
+                if let Some(cell) = grid.get_mut(i) {
+                    // Assert that we haven't already set this cell
+                    assert_eq!(cell.hz, 0, "{:?}", (x, y));
 
-                let rolled = xs::range(&mut rng, 0..4);
-                cell.cube_i = (1 + (rolled & 0b11)) as _;
+                    cell.hz = hz;
+
+                    let rolled = xs::range(&mut rng, 0..4);
+                    cell.cube_i = (1 + (rolled & 0b11)) as _;
+                }
             }
 
             match mode {
@@ -460,22 +474,33 @@ impl State {
             i = grid_xy_inner_to_i((x, y));
 
             if x >= GridX::MAX.get()
-            || y >= GridY::MAX.get()  {
-                if break_cond!() {
-                    break
+            || y >= GridY::MAX.get() {
+                if continue_cond!() {
+                    // fallthrough
                 } else {
-                    continue
+                    break
                 }
             }
 
             match mode {
                 Switchback(_) => {
-                    hz += 1;
+                    if !(
+                        x >= GridX::MAX.get()
+                        || y >= GridY::MAX.get()
+                    ) {
+                        hz += 1;
+                        if hz > HZ_BOTTOM {
+                            hz = HZ_BOTTOM;
+                        }
+                    }
                 }
                 DiagonalPlateaus => {
                     // If we just reached a new layer
                     if y == GridY::MIN.get() {
                         hz += 1;
+                        if hz > HZ_BOTTOM {
+                            hz = HZ_BOTTOM;
+                        }
                     }
                 }
             }
