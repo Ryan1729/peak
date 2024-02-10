@@ -175,6 +175,9 @@ pub type Grid<const LEN: usize = {GRID_LEN as usize}> = [Cell; LEN];
 pub type CameraX = i16;
 pub type CameraY = i16;
 
+pub const X_SCALE: CameraX = CUBE_W.0 / 2;
+pub const Y_SCALE: CameraY = CUBE_H.0 / 4;
+
 pub type GridInner = u8;
 pub type GridXInner = GridInner;
 pub type GridYInner = GridInner;
@@ -402,8 +405,8 @@ impl State {
         // TODO? experiment with switching modes during generation.
         // TODO randomize starting mode
 
-        let mut mode = Switchback(Forward);
-        //let mut mode = DiagonalPlateaus;
+        //let mut mode = Switchback(Forward);
+        let mut mode = DiagonalPlateaus;
 
         macro_rules! continue_cond {
             () => {
@@ -517,8 +520,8 @@ impl State {
             rng,
             debug,
             grid,
-            camera_x: 3,
-            camera_y: 1,
+            camera_x: 3 * X_SCALE,
+            camera_y: 1 * Y_SCALE,
             player: <_>::default(),
             move_mode: <_>::default(),
         }

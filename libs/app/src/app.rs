@@ -1,4 +1,4 @@
-use game::{CUBE_H, CUBE_W, GRID_W, GRID_H, HZ, HZ_BOTTOM, CameraX, CameraY, Cell, Grid, GridX, GridY, grid_xy_to_i, GridInner, GridXInner, GridYInner, MoveMode};
+use game::{CUBE_H, CUBE_W, GRID_W, GRID_H, HZ, HZ_BOTTOM, CameraX, CameraY, Cell, Grid, GridX, GridY, grid_xy_to_i, GridInner, GridXInner, GridYInner, MoveMode, X_SCALE, Y_SCALE};
 use gfx::{Commands};
 use platform_types::{command, sprite, unscaled, Button, Input, Speaker, SFX};
 pub use platform_types::StateParams;
@@ -126,16 +126,16 @@ fn update(state: &mut game::State, input: Input, speaker: &mut Speaker) {
         1 => {
             match pressed {
                 Some(Button::UP) => {
-                    state.camera_y = state.camera_y.wrapping_sub(1);
+                    state.camera_y = state.camera_y.wrapping_sub(Y_SCALE);
                 }
                 Some(Button::DOWN) => {
-                    state.camera_y = state.camera_y.wrapping_add(1);
+                    state.camera_y = state.camera_y.wrapping_add(Y_SCALE);
                 }
                 Some(Button::LEFT) => {
-                    state.camera_x = state.camera_x.wrapping_sub(1);
+                    state.camera_x = state.camera_x.wrapping_sub(X_SCALE);
                 }
                 Some(Button::RIGHT) => {
-                    state.camera_x = state.camera_x.wrapping_add(1);
+                    state.camera_x = state.camera_x.wrapping_add(X_SCALE);
                 }
                 None | _ => {}
             }
@@ -405,29 +405,32 @@ fn render(commands: &mut Commands, state: &game::State) {
     fn to_iso(
         (grid_x, grid_y): (GridX, GridY),
         cell: Cell,
-        (camera_x, camera_y): (CameraX, CameraY)
     ) -> (CameraX, CameraY) {
         (
-            grid_y.get() as CameraX - grid_x.get() as CameraX + camera_x,
-            grid_y.get() as CameraY + grid_x.get() as CameraY + cell.hz as CameraY + camera_y,
+            grid_y.get() as CameraX - grid_x.get() as CameraX,
+            grid_y.get() as CameraY + grid_x.get() as CameraY + cell.hz as CameraY,
         )
     }
-
+// Have the camera follow the player directly, so the player is always in 
+// the center of the screen
     for ((grid_x, grid_y), cell) in DrawIter::of(&state.grid) {
         let (iso_x, iso_y) = to_iso(
             (grid_x, grid_y),
             cell,
-            (state.camera_x, state.camera_y)
         );
 
         commands.sspr(
             game::CUBE_XYS[usize::from(cell.cube_i)],
             unscaled::Rect {
                 x: BASE_X + unscaled::W(
-                    iso_x * CUBE_W.0 / 2
+                    iso_x * X_SCALE
+                ) + unscaled::W(
+                    state.camera_x
                 ),
                 y: BASE_Y + unscaled::H(
-                    iso_y * CUBE_H.0 / 4
+                    iso_y * Y_SCALE
+                ) + unscaled::H(
+                    state.camera_y
                 ),
                 w: CUBE_W,
                 h: CUBE_H,
@@ -439,17 +442,20 @@ fn render(commands: &mut Commands, state: &game::State) {
         let (iso_x, iso_y) = to_iso(
             (state.player.x, state.player.y),
             state.player_cell(),
-            (state.camera_x, state.camera_y)
         );
     
         commands.sspr(
             state.player.sub_face.sprite_xy(),
             unscaled::Rect {
                 x: BASE_X + unscaled::W(
-                    iso_x * CUBE_W.0 / 2
+                    iso_x * X_SCALE
+                ) + unscaled::W(
+                    state.camera_x
                 ),
                 y: BASE_Y + unscaled::H(
-                    iso_y * CUBE_H.0 / 4
+                    iso_y * Y_SCALE
+                ) + unscaled::H(
+                    state.camera_y
                 ),
                 w: CUBE_W,
                 h: CUBE_H,
