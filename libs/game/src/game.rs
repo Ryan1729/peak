@@ -291,16 +291,18 @@ pub type PlayerY = GridY;
 #[derive(Copy, Clone, Debug, Default)]
 pub enum SubFace {
     #[default]
+    ///
     LeftBottom,
     LeftMiddle,
     LeftTop,
-    RightBottom,
-    RightMiddle,
-    RightTop,
     /// The top slash like this `/`
     TopSlashBottom,
     TopSlashMiddle,
     TopSlashTop,
+    ///
+    RightBottom,
+    RightMiddle,
+    RightTop,
     /// The top slash like this `\`
     TopBackslashBottom,
     TopBackslashMiddle,
@@ -317,13 +319,13 @@ impl SubFace {
         match self {
             LeftBottom => LeftMiddle,
             LeftMiddle => LeftTop,
-            LeftTop => RightBottom,
-            RightBottom => RightMiddle,
-            RightMiddle => RightTop,
-            RightTop => TopSlashBottom,
+            LeftTop => TopSlashBottom,
             TopSlashBottom => TopSlashMiddle,
             TopSlashMiddle => TopSlashTop,
-            TopSlashTop => TopBackslashBottom,
+            TopSlashTop => RightBottom,
+            RightBottom => RightMiddle,
+            RightMiddle => RightTop,
+            RightTop => TopBackslashBottom,
             TopBackslashBottom => TopBackslashMiddle,
             TopBackslashMiddle => TopBackslashTop,
             TopBackslashTop => LeftBottom,
@@ -336,13 +338,13 @@ impl SubFace {
             LeftBottom => TopBackslashTop,
             LeftMiddle => LeftBottom,
             LeftTop => LeftMiddle,
-            RightBottom => LeftTop,
-            RightMiddle => RightBottom,
-            RightTop => RightMiddle,
-            TopSlashBottom => RightTop,
+            TopSlashBottom => LeftTop,
             TopSlashMiddle => TopSlashBottom,
             TopSlashTop => TopSlashMiddle,
-            TopBackslashBottom => TopSlashTop,
+            RightBottom => TopSlashTop,
+            RightMiddle => RightBottom,
+            RightTop => RightMiddle,
+            TopBackslashBottom => RightTop,
             TopBackslashMiddle => TopBackslashBottom,
             TopBackslashTop => TopBackslashMiddle,
         }

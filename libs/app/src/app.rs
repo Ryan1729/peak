@@ -399,6 +399,36 @@ fn render(commands: &mut Commands, state: &game::State) {
     let grid_x_end: i16 = state.debug[DEBUG_GRID_X_END] as i8 as _;
     let grid_y_end: i16 = state.debug[DEBUG_GRID_Y_END] as i8 as _;
 
+    let (player_x_offset, player_y_offset) = {
+        use game::SubFace::*;
+
+        let w0 = unscaled::W(0);
+        let w1 = unscaled::W(X_SCALE / 3);
+        let w2 = unscaled::W(2 * X_SCALE / 3);
+
+        let h0 = unscaled::H(5 * Y_SCALE / 6);
+        let h1 = unscaled::H(4 * Y_SCALE / 6);
+        let h2 = unscaled::H(Y_SCALE / 2);
+        let h3 = unscaled::H(2 * Y_SCALE / 6);
+        let h4 = unscaled::H(Y_SCALE / 6);
+        let h5 = unscaled::H(0);
+
+        match state.player.sub_face {
+            LeftBottom => (w0, h0),
+            LeftMiddle => (w0, h1),
+            LeftTop => (w0, h2),
+            RightBottom => (w2, h0),
+            RightMiddle => (w2, h1),
+            RightTop => (w2, h2),
+            TopSlashBottom => (w0, h3),
+            TopSlashMiddle => (w1, h4),
+            TopSlashTop => (w2, h5),
+            TopBackslashBottom => (w2, h3),
+            TopBackslashMiddle => (w1, h4),
+            TopBackslashTop => (w0, h5),
+        }
+    };
+
     let z1: i16 = state.debug[DEBUG_Z1] as i8 as _;
     let z2: i16 = state.debug[DEBUG_Z2] as i8 as _;
 
@@ -411,7 +441,7 @@ fn render(commands: &mut Commands, state: &game::State) {
             grid_y.get() as CameraY + grid_x.get() as CameraY + cell.hz as CameraY,
         )
     }
-// Have the camera follow the player directly, so the player is always in 
+// TODO Have the camera follow the player directly, so the player is always in 
 // the center of the screen
     for ((grid_x, grid_y), cell) in DrawIter::of(&state.grid) {
         let (iso_x, iso_y) = to_iso(
@@ -424,12 +454,14 @@ fn render(commands: &mut Commands, state: &game::State) {
             unscaled::Rect {
                 x: BASE_X + unscaled::W(
                     iso_x * X_SCALE
-                ) + unscaled::W(
+                ) - player_x_offset
+                + unscaled::W(
                     state.camera_x
                 ),
                 y: BASE_Y + unscaled::H(
                     iso_y * Y_SCALE
-                ) + unscaled::H(
+                ) - player_y_offset
+                + unscaled::H(
                     state.camera_y
                 ),
                 w: CUBE_W,
@@ -449,12 +481,14 @@ fn render(commands: &mut Commands, state: &game::State) {
             unscaled::Rect {
                 x: BASE_X + unscaled::W(
                     iso_x * X_SCALE
-                ) + unscaled::W(
+                ) - player_x_offset
+                + unscaled::W(
                     state.camera_x
                 ),
                 y: BASE_Y + unscaled::H(
                     iso_y * Y_SCALE
-                ) + unscaled::H(
+                ) - player_y_offset
+                + unscaled::H(
                     state.camera_y
                 ),
                 w: CUBE_W,
