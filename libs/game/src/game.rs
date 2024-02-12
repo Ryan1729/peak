@@ -381,7 +381,7 @@ impl State {
         let mut debug: [u8; 16] = <_>::default();
         debug[2] = 2;
         debug[3] = 2;
-        debug[14] = 1;
+        debug[14] = 2;
         let mut rng = xs::from_seed(seed);
 
         let mut grid = [Cell::default(); GRID_LEN as usize];

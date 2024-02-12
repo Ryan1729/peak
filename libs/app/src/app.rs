@@ -64,6 +64,7 @@ impl platform_types::State for State {
     }
 }
 
+const DEBUG_PRINTING: usize = 13;
 const DEBUG_MODE: usize = 14;
 const DEBUG_I: usize = 15;
 const DEBUG_GRID_X_START: usize = 0;
@@ -406,11 +407,12 @@ fn render(commands: &mut Commands, state: &game::State) {
         let w1 = unscaled::W(X_SCALE / 3);
         let w2 = unscaled::W(2 * X_SCALE / 3);
 
-        let h0 = unscaled::H(5 * Y_SCALE / 6);
-        let h1 = unscaled::H(4 * Y_SCALE / 6);
-        let h2 = unscaled::H(Y_SCALE / 2);
-        let h3 = unscaled::H(2 * Y_SCALE / 6);
-        let h4 = unscaled::H(Y_SCALE / 6);
+        // TODO Properly derive better versions of these
+        let h0 = unscaled::H((15 * Y_SCALE / 4) - 1);
+        let h1 = unscaled::H((12 * Y_SCALE / 4) - 2);
+        let h2 = unscaled::H((9 * Y_SCALE / 4) - 3);
+        let h3 = unscaled::H((6 * Y_SCALE / 4) - 6);
+        let h4 = unscaled::H((3 * Y_SCALE / 4) - 7);
         let h5 = unscaled::H(0);
 
         match state.player.sub_face {
@@ -504,18 +506,35 @@ fn render(commands: &mut Commands, state: &game::State) {
         6
     );
 
-    let mut y = unscaled::Y(0);
+    match state.debug[DEBUG_PRINTING] {
+        //0 => {}
+        0 => {
+            let mut y = unscaled::Y(0);
+            
+            y += unscaled::H(16);
 
-    const FITS_ON_SCREEN: usize = 6;
-    for grid_slice in state.grid.chunks(FITS_ON_SCREEN) {
-        y += unscaled::H(16);
-
-        commands.print_line(
-            format!("{grid_slice:?}").as_bytes(),
-            unscaled::X(0),
-            y,
-            6
-        );
+            commands.print_line(
+                format!("p offsets {:?}", (player_x_offset.get(), player_y_offset.get())).as_bytes(),
+                unscaled::X(0),
+                y,
+                6
+            );
+        }
+        _ => {
+            let mut y = unscaled::Y(0);
+        
+            const FITS_ON_SCREEN: usize = 6;
+            for grid_slice in state.grid.chunks(FITS_ON_SCREEN) {
+                y += unscaled::H(16);
+        
+                commands.print_line(
+                    format!("{grid_slice:?}").as_bytes(),
+                    unscaled::X(0),
+                    y,
+                    6
+                );
+            }
+        }
     }
 }
 
